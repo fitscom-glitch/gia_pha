@@ -6,7 +6,7 @@ class LayoutConfig {
   const LayoutConfig({
     this.cardW = 132,
     this.cardH = 76,
-    this.spouseGap = 10,
+    this.spouseGap = 18,
     this.hGap = 28,
     this.vGap = 64,
     this.margin = 32,

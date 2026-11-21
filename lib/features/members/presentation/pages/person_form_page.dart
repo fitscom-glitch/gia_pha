@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import 'package:gia_pha/core/widgets/gold_app_bar.dart';
 
 import 'package:gia_pha/features/members/presentation/providers/family_providers.dart';
 import 'package:gia_pha/features/members/domain/entities/person.dart';
@@ -93,7 +94,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_title)),
+      appBar: GoldAppBar(title: _title),
       body: Form(
         key: _formKey,
         child: ListView(

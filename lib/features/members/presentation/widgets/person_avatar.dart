@@ -1,11 +1,47 @@
 import 'package:flutter/material.dart';
-
+import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/features/members/domain/entities/person.dart';
 
-MaterialColor genderColor(Gender g) => switch (g) {
-      Gender.male => Colors.blue,
-      Gender.female => Colors.pink,
-      Gender.other => Colors.grey,
+/// Màu theo giới: nam (rồng) đỏ son, nữ (phụng) vàng kim.
+class GenderStyle {
+  const GenderStyle({
+    required this.fill,
+    required this.onFill,
+    required this.ring,
+    required this.accent,
+  });
+
+  final Color fill;
+  final Color onFill;
+  final Color ring;
+  final Color accent;
+}
+
+GenderStyle genderStyle(Gender g) => switch (g) {
+      Gender.male => const GenderStyle(
+          fill: AppColors.red,
+          onFill: AppColors.goldLight,
+          ring: AppColors.gold,
+          accent: AppColors.red,
+        ),
+      Gender.female => const GenderStyle(
+          fill: AppColors.gold,
+          onFill: AppColors.redDeep,
+          ring: AppColors.red,
+          accent: AppColors.goldDark,
+        ),
+      Gender.other => const GenderStyle(
+          fill: AppColors.ink,
+          onFill: AppColors.goldLight,
+          ring: AppColors.gold,
+          accent: AppColors.ink,
+        ),
+    };
+
+String genderLabel(Gender g) => switch (g) {
+      Gender.male => 'Nam',
+      Gender.female => 'Nữ',
+      Gender.other => 'Khác',
     };
 
 class PersonAvatar extends StatelessWidget {
@@ -16,14 +52,27 @@ class PersonAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = genderColor(person.gender);
+    final style = genderStyle(person.gender);
     final parts = person.fullName.trim().split(RegExp(r'\s+'));
     final initial = parts.last.isEmpty ? '?' : parts.last[0].toUpperCase();
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: color.shade100,
-      foregroundColor: color.shade900,
-      child: Text(initial, style: TextStyle(fontSize: radius * 0.9)),
+    return Container(
+      width: radius * 2,
+      height: radius * 2,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: style.fill,
+        border: Border.all(color: style.ring, width: radius > 30 ? 3 : 2),
+      ),
+      child: Text(
+        initial,
+        style: TextStyle(
+          fontFamily: 'serif',
+          fontWeight: FontWeight.w700,
+          fontSize: radius * 0.9,
+          color: style.onFill,
+        ),
+      ),
     );
   }
 }
