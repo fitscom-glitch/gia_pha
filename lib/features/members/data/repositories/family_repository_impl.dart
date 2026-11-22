@@ -29,4 +29,8 @@ class FamilyRepositoryImpl implements FamilyRepository {
 
   @override
   Future<void> deletePerson(String id) => _local.deletePerson(id);
+
+  @override
+  Future<void> setBirthOrders(List<String> orderedIds) =>
+      _local.setBirthOrders(orderedIds);
 }

@@ -7,10 +7,22 @@ class AppDatabase {
   AppDatabase._();
   static final AppDatabase instance = AppDatabase._();
 
-  static const _version = 1;
+  static const _version = 2;
 
-  /// Key = phiên bản đích. Vd: 2: (db) => db.execute('ALTER TABLE ...')
-  static final Map<int, Future<void> Function(Database db)> _migrations = {};
+  /// Key = phiên bản đích.
+  static final Map<int, Future<void> Function(Database db)> _migrations = {
+    2: (db) async {
+      await db.execute('ALTER TABLE persons ADD COLUMN phone TEXT');
+      await db.execute('ALTER TABLE persons ADD COLUMN address TEXT');
+      await db.execute('ALTER TABLE persons ADD COLUMN email TEXT');
+      await db.execute(
+        'ALTER TABLE persons ADD COLUMN seq INTEGER NOT NULL DEFAULT 0',
+      );
+      await db.execute('ALTER TABLE persons ADD COLUMN birth_order INTEGER');
+      await db.execute('UPDATE persons SET seq = rowid');
+      await _createExtraTables(db);
+    },
+  };
 
   Database? _db;
 
@@ -37,7 +49,12 @@ class AppDatabase {
         death_date TEXT,
         birth_place TEXT,
         occupation TEXT,
-        bio TEXT
+        bio TEXT,
+        phone TEXT,
+        address TEXT,
+        email TEXT,
+        seq INTEGER NOT NULL DEFAULT 0,
+        birth_order INTEGER
       )''');
     await db.execute('''
       CREATE TABLE relationships (
@@ -50,6 +67,43 @@ class AppDatabase {
       )''');
     await db.execute('CREATE INDEX idx_rel_a ON relationships(person_a_id)');
     await db.execute('CREATE INDEX idx_rel_b ON relationships(person_b_id)');
+    await _createExtraTables(db);
+  }
+
+  static Future<void> _createExtraTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS articles (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS honors (
+        id TEXT PRIMARY KEY,
+        person_id TEXT,
+        honoree TEXT NOT NULL,
+        title TEXT NOT NULL,
+        year INTEGER,
+        description TEXT,
+        FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE SET NULL
+      )''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS heirlooms (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        image_path TEXT,
+        keeper TEXT,
+        created_at TEXT NOT NULL
+      )''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS settings (
+        k TEXT PRIMARY KEY,
+        v TEXT NOT NULL
+      )''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {

@@ -1,6 +1,13 @@
 # Gia phả
 
-Ứng dụng Flutter quản lý gia phả: thành viên, quan hệ (cha mẹ, vợ/chồng, con) và sơ đồ cây.
+Ứng dụng Flutter quản lý gia phả, dữ liệu lưu trên máy (SQLite).
+
+**Tính năng**: thành viên và quan hệ (cha mẹ, vợ/chồng, con), sơ đồ cây, thứ tự anh em (theo thứ tự nhập hoặc tự kéo thả),
+lịch dương/âm, ngày giỗ và sinh nhật, lịch sử dòng họ, tộc ước & hương lễ, chuyện cổ kim, bảng vinh danh,
+di sản & kỷ vật (ảnh), danh bạ, sao lưu/khôi phục.
+
+**Thứ tự anh em**: các con luôn xếp theo "con thứ mấy" nếu đã đặt (ô trong form thành viên hoặc nút ⇅ ở mục Con
+của trang chi tiết), nếu chưa đặt thì theo thứ tự nhập vào. Không bao giờ xếp theo bảng chữ cái.
 
 ## Kiến trúc
 
@@ -18,10 +25,11 @@ Quy tắc:
 - `domain` không import Flutter, sqflite.
 - `members` là feature lõi; các feature khác (vd. `family_tree`) được phụ thuộc vào `domain`/providers của nó, không phụ thuộc vòng.
 - `core/` chỉ chứa thứ dùng chung, không phụ thuộc feature nào.
+- Feature có logic nghiệp vụ (members) dùng usecase; feature CRUD đơn giản (articles, honors, heirlooms, settings) để repository truy cập SQLite trực tiếp.
 
 ## Công nghệ
 
-Riverpod (state/DI), go_router (điều hướng), sqflite (lưu local), uuid.
+Riverpod (state/DI), go_router (điều hướng, 4 tab), sqflite (lưu local), uuid, image_picker + path_provider (ảnh tư liệu).
 
 ## Chạy
 

@@ -158,6 +158,7 @@ class OrnateCard extends StatelessWidget {
     this.onTap,
     this.padding = const EdgeInsets.all(12),
     this.margin = EdgeInsets.zero,
+    this.ornate = false,
   });
 
   final Widget child;
@@ -165,13 +166,16 @@ class OrnateCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
 
+  /// true: thêm hoa văn móc ở bốn góc. Mặc định thẻ phẳng, viền mảnh.
+  final bool ornate;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: margin,
       child: Material(
         color: AppColors.card,
-        elevation: 1.5,
+        elevation: ornate ? 1.5 : 0.5,
         shadowColor: const Color(0x667F0E14),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -181,7 +185,7 @@ class OrnateCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: CustomPaint(
-            foregroundPainter: const _CornerPainter(),
+            foregroundPainter: ornate ? const _CornerPainter() : null,
             child: Padding(padding: padding, child: child),
           ),
         ),

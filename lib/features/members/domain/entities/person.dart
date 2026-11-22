@@ -10,6 +10,11 @@ class Person {
     this.birthPlace,
     this.occupation,
     this.bio,
+    this.phone,
+    this.address,
+    this.email,
+    this.seq = 0,
+    this.birthOrder,
   });
 
   final String id;
@@ -20,6 +25,15 @@ class Person {
   final String? birthPlace;
   final String? occupation;
   final String? bio;
+  final String? phone;
+  final String? address;
+  final String? email;
+
+  /// Số thứ tự nhập vào (do cơ sở dữ liệu cấp; nhỏ = nhập trước).
+  final int seq;
+
+  /// "Con thứ mấy" trong anh chị em (1 = con trưởng). Null = chưa đặt, xếp theo [seq].
+  final int? birthOrder;
 
   bool get isDeceased => deathDate != null;
 
@@ -29,4 +43,21 @@ class Person {
     if (deathDate != null) return '$b – ${deathDate!.year}';
     return birthDate != null ? 'sinh $b' : '';
   }
+
+  /// Bản sao với thông tin liên hệ mới (cho phép đặt về null).
+  Person withContact({String? phone, String? address, String? email}) => Person(
+        id: id,
+        fullName: fullName,
+        gender: gender,
+        birthDate: birthDate,
+        deathDate: deathDate,
+        birthPlace: birthPlace,
+        occupation: occupation,
+        bio: bio,
+        phone: phone,
+        address: address,
+        email: email,
+        seq: seq,
+        birthOrder: birthOrder,
+      );
 }

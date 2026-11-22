@@ -10,4 +10,7 @@ abstract interface class FamilyRepository {
   Future<void> savePerson(Person person, {Relationship? relationship});
 
   Future<void> deletePerson(String id);
+
+  /// Đặt "con thứ mấy" = 1..n theo đúng thứ tự của [orderedIds].
+  Future<void> setBirthOrders(List<String> orderedIds);
 }

@@ -11,6 +11,11 @@ class PersonModel extends Person {
     super.birthPlace,
     super.occupation,
     super.bio,
+    super.phone,
+    super.address,
+    super.email,
+    super.seq,
+    super.birthOrder,
   });
 
   factory PersonModel.fromEntity(Person p) => PersonModel(
@@ -22,6 +27,11 @@ class PersonModel extends Person {
         birthPlace: p.birthPlace,
         occupation: p.occupation,
         bio: p.bio,
+        phone: p.phone,
+        address: p.address,
+        email: p.email,
+        seq: p.seq,
+        birthOrder: p.birthOrder,
       );
 
   factory PersonModel.fromMap(Map<String, Object?> m) => PersonModel(
@@ -33,8 +43,14 @@ class PersonModel extends Person {
         birthPlace: m['birth_place'] as String?,
         occupation: m['occupation'] as String?,
         bio: m['bio'] as String?,
+        phone: m['phone'] as String?,
+        address: m['address'] as String?,
+        email: m['email'] as String?,
+        seq: (m['seq'] as int?) ?? 0,
+        birthOrder: m['birth_order'] as int?,
       );
 
+  /// Không gồm `seq`: số thứ tự nhập do datasource cấp khi thêm mới.
   Map<String, Object?> toMap() => {
         'id': id,
         'full_name': fullName,
@@ -44,6 +60,10 @@ class PersonModel extends Person {
         'birth_place': birthPlace,
         'occupation': occupation,
         'bio': bio,
+        'phone': phone,
+        'address': address,
+        'email': email,
+        'birth_order': birthOrder,
       };
 
   static DateTime? _date(Object? v) =>

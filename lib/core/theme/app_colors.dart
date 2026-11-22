@@ -16,5 +16,5 @@ abstract final class AppColors {
   static const ink = Color(0xFF3A1810);
 
   /// Họa tiết vân mây rất nhạt trên nền giấy.
-  static const patternLine = Color(0x249C7A12);
+  static const patternLine = Color(0x149C7A12);
 }

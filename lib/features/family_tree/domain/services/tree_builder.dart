@@ -22,7 +22,7 @@ TreeNode? buildDescendantTree(FamilyData data, String rootId) {
       }
     }
     visited.addAll(kids.keys); // tránh một người xuất hiện 2 lần / vòng lặp
-    final sorted = kids.values.toList()..sort(compareByBirth);
+    final sorted = sortedSiblings(kids.values); // đúng thứ tự anh em
     return TreeNode(p, spouses, [for (final k in sorted) build(k)]);
   }
 

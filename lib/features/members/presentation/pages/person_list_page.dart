@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
-import 'package:gia_pha/core/widgets/dragon_phoenix_banner.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
 import 'package:gia_pha/core/widgets/ornaments/motif_data.dart';
 import 'package:gia_pha/core/widgets/ornaments/motif_painter.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
+import 'package:gia_pha/features/members/domain/entities/family_data.dart';
+import 'package:gia_pha/features/members/domain/entities/person.dart';
 import 'package:gia_pha/features/members/presentation/providers/family_providers.dart';
 import 'package:gia_pha/features/members/presentation/widgets/person_avatar.dart';
+
+enum _SortMode { entry, generation, name }
 
 class PersonListPage extends ConsumerStatefulWidget {
   const PersonListPage({super.key});
@@ -19,14 +22,37 @@ class PersonListPage extends ConsumerStatefulWidget {
 
 class _PersonListPageState extends ConsumerState<PersonListPage> {
   String _query = '';
+  _SortMode _sort = _SortMode.entry;
+
+  /// Theo tên gọi (từ cuối), rồi họ tên đầy đủ.
+  static int _byName(Person a, Person b) {
+    String given(Person p) =>
+        p.fullName.trim().split(RegExp(r'\s+')).last.toLowerCase();
+    final c = given(a).compareTo(given(b));
+    return c != 0 ? c : a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase());
+  }
 
   @override
   Widget build(BuildContext context) {
     final family = ref.watch(familyProvider);
     return Scaffold(
       appBar: GoldAppBar(
-        title: 'Gia phả dòng họ',
+        title: 'Gia phả',
         actions: [
+          PopupMenuButton<_SortMode>(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Sắp xếp',
+            initialValue: _sort,
+            onSelected: (m) => setState(() => _sort = m),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: _SortMode.entry, child: Text('Thứ tự nhập')),
+              PopupMenuItem(
+                value: _SortMode.generation,
+                child: Text('Theo đời & thứ tự anh em'),
+              ),
+              PopupMenuItem(value: _SortMode.name, child: Text('Tên A–Z')),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.account_tree),
             tooltip: 'Sơ đồ cây',
@@ -39,24 +65,31 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Lỗi: $e')),
           data: (data) {
+            final gens = data.generations();
             final q = _query.trim().toLowerCase();
-            final people = q.isEmpty
-                ? data.persons
-                : data.persons
-                    .where((p) => p.fullName.toLowerCase().contains(q))
-                    .toList();
+            final people = [
+              for (final p in data.persons)
+                if (q.isEmpty || p.fullName.toLowerCase().contains(q)) p,
+            ];
+            switch (_sort) {
+              case _SortMode.entry:
+                break; // đã theo thứ tự nhập từ cơ sở dữ liệu
+              case _SortMode.generation:
+                people.sort((a, b) {
+                  final c = (gens[a.id] ?? 0).compareTo(gens[b.id] ?? 0);
+                  return c != 0 ? c : compareSiblings(a, b);
+                });
+              case _SortMode.name:
+                people.sort(_byName);
+            }
             return Column(
               children: [
-                DragonPhoenixBanner(
-                  title: 'GIA PHẢ',
-                  subtitle: '${data.persons.length} thành viên',
-                ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
                   child: TextField(
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search, color: AppColors.goldDark),
-                      hintText: 'Tìm theo tên',
+                      hintText: 'Tìm theo tên (${data.persons.length} thành viên)',
                       filled: true,
                       fillColor: AppColors.card,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -80,6 +113,13 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
                           itemCount: people.length,
                           itemBuilder: (_, i) {
                             final p = people[i];
+                            final g = gens[p.id];
+                            final order = birthOrderLabel(p.birthOrder);
+                            final sub = [
+                              if (g != null) 'Đời ${g + 1}',
+                              if (order != null) order,
+                              if (p.lifespan.isNotEmpty) p.lifespan,
+                            ].join(' · ');
                             return OrnateCard(
                               margin: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -107,9 +147,9 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
                                             color: AppColors.ink,
                                           ),
                                         ),
-                                        if (p.lifespan.isNotEmpty)
+                                        if (sub.isNotEmpty)
                                           Text(
-                                            p.lifespan,
+                                            sub,
                                             style: const TextStyle(
                                               fontSize: 13,
                                               color: AppColors.redDark,

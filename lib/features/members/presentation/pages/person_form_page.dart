@@ -29,10 +29,12 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
   late final TextEditingController _place;
   late final TextEditingController _job;
   late final TextEditingController _bio;
+  late final TextEditingController _order;
   late Gender _gender;
   DateTime? _birth;
   DateTime? _death;
   bool _saving = false;
+  Person? _existing;
 
   @override
   void initState() {
@@ -44,6 +46,8 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
     _place = TextEditingController(text: existing?.birthPlace ?? '');
     _job = TextEditingController(text: existing?.occupation ?? '');
     _bio = TextEditingController(text: existing?.bio ?? '');
+    _order = TextEditingController(text: existing?.birthOrder?.toString() ?? '');
+    _existing = existing;
     _gender = existing?.gender ?? Gender.male;
     _birth = existing?.birthDate;
     _death = existing?.deathDate;
@@ -55,6 +59,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
     _place.dispose();
     _job.dispose();
     _bio.dispose();
+    _order.dispose();
     super.dispose();
   }
 
@@ -82,6 +87,11 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       birthPlace: _nullIfEmpty(_place.text),
       occupation: _nullIfEmpty(_job.text),
       bio: _nullIfEmpty(_bio.text),
+      phone: _existing?.phone,
+      address: _existing?.address,
+      email: _existing?.email,
+      seq: _existing?.seq ?? 0,
+      birthOrder: int.tryParse(_order.text.trim()),
     );
     await ref.read(familyProvider.notifier).saveMember(
           person,
@@ -128,6 +138,22 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
                 label: 'Ngày mất (nếu có)',
                 value: _death,
                 onChanged: (v) => setState(() => _death = v)),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _order,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Con thứ mấy trong anh chị em',
+                helperText: 'Để trống = xếp theo thứ tự nhập. 1 = con trưởng.',
+                border: OutlineInputBorder(),
+              ),
+              validator: (v) {
+                final t = v?.trim() ?? '';
+                if (t.isEmpty) return null;
+                final n = int.tryParse(t);
+                return (n == null || n < 1) ? 'Nhập số từ 1 trở lên' : null;
+              },
+            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _place,

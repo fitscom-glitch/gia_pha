@@ -89,8 +89,11 @@ class PersonDetailPage extends ConsumerWidget {
                   ),
                   _RelationSection(
                     title: 'Con',
-                    people: data.childrenOf(id),
+                    people: data.childrenOfUnit(id),
                     onAdd: () => context.push('/form?anchor=$id&as=child'),
+                    onReorder: data.childrenOfUnit(id).length > 1
+                        ? () => context.push('/person/$id/children')
+                        : null,
                   ),
                 ],
               ),
@@ -189,7 +192,7 @@ class _Header extends StatelessWidget {
                         border: Border.all(color: AppColors.gold),
                       ),
                       child: Text(
-                        genderLabel(person.gender),
+                        _chipText(person),
                         style: const TextStyle(fontSize: 12.5, color: AppColors.goldLight),
                       ),
                     ),
@@ -266,11 +269,13 @@ class _RelationSection extends StatelessWidget {
     required this.title,
     required this.people,
     required this.onAdd,
+    this.onReorder,
   });
 
   final String title;
   final List<Person> people;
   final VoidCallback onAdd;
+  final VoidCallback? onReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -294,6 +299,13 @@ class _RelationSection extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              if (onReorder != null)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'Sắp xếp thứ tự anh em',
+                  icon: const Icon(Icons.swap_vert, color: AppColors.red),
+                  onPressed: onReorder,
+                ),
               TextButton.icon(
                 onPressed: onAdd,
                 icon: const Icon(Icons.add, size: 18),
@@ -326,7 +338,7 @@ class _RelationSection extends StatelessWidget {
                             color: AppColors.ink,
                           ),
                         ),
-                        subtitle: p.lifespan.isEmpty ? null : Text(p.lifespan),
+                        subtitle: personSubtitle(p).isEmpty ? null : Text(personSubtitle(p)),
                         onTap: () => context.push('/person/${p.id}'),
                       ),
                   ],
@@ -335,4 +347,9 @@ class _RelationSection extends StatelessWidget {
       ],
     );
   }
+}
+
+String _chipText(Person p) {
+  final order = birthOrderLabel(p.birthOrder);
+  return order == null ? genderLabel(p.gender) : '${genderLabel(p.gender)} · $order';
 }

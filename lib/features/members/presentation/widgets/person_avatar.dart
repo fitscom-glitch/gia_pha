@@ -76,3 +76,18 @@ class PersonAvatar extends StatelessWidget {
     );
   }
 }
+
+/// "Con trưởng", "Con thứ 3"... hoặc null nếu chưa đặt thứ tự.
+String? birthOrderLabel(int? order) {
+  if (order == null) return null;
+  return order == 1 ? 'Con trưởng' : 'Con thứ $order';
+}
+
+/// Dòng phụ dưới tên: năm sinh/mất và thứ tự anh em.
+String personSubtitle(Person p) {
+  final order = birthOrderLabel(p.birthOrder);
+  return [
+    if (p.lifespan.isNotEmpty) p.lifespan,
+    if (order != null) order,
+  ].join(' · ');
+}

@@ -20,6 +20,9 @@ class _FakeRepository implements FamilyRepository {
 
   @override
   Future<void> deletePerson(String id) async {}
+
+  @override
+  Future<void> setBirthOrders(List<String> orderedIds) async {}
 }
 
 void main() {

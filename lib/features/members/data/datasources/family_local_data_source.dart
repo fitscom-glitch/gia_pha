@@ -8,34 +8,38 @@ class FamilyLocalDataSource {
 
   final AppDatabase _db;
 
+  /// Theo thứ tự nhập vào (KHÔNG sắp theo bảng chữ cái).
   Future<List<PersonModel>> getPersons() async {
     final db = await _db.database;
-    final rows = await db.query('persons', orderBy: 'full_name COLLATE NOCASE');
+    final rows = await db.query('persons', orderBy: 'seq, rowid');
     return rows.map(PersonModel.fromMap).toList();
   }
 
   Future<List<RelationshipModel>> getRelationships() async {
     final db = await _db.database;
-    final rows = await db.query('relationships');
+    final rows = await db.query('relationships', orderBy: 'rowid');
     return rows.map(RelationshipModel.fromMap).toList();
   }
 
-  /// Update nếu đã có, ngược lại insert (không dùng REPLACE vì nó xóa dòng cũ
-  /// và kích hoạt ON DELETE CASCADE làm mất quan hệ). Quan hệ mới (nếu có)
-  /// được ghi trong cùng giao dịch.
+  /// Update nếu đã có, ngược lại insert với `seq` kế tiếp (không dùng REPLACE vì
+  /// nó xóa dòng cũ và kích hoạt ON DELETE CASCADE làm mất quan hệ).
+  /// Quan hệ mới (nếu có) được ghi trong cùng giao dịch.
   Future<void> savePerson(
     PersonModel person, {
     RelationshipModel? relationship,
   }) async {
     final db = await _db.database;
     await db.transaction((txn) async {
-      final updated = await txn.update(
-        'persons',
-        person.toMap(),
-        where: 'id = ?',
-        whereArgs: [person.id],
-      );
-      if (updated == 0) await txn.insert('persons', person.toMap());
+      final map = person.toMap();
+      final updated = await txn
+          .update('persons', map, where: 'id = ?', whereArgs: [person.id]);
+      if (updated == 0) {
+        final r = await txn.rawQuery(
+          'SELECT COALESCE(MAX(seq), 0) + 1 AS next FROM persons',
+        );
+        final next = r.first['next'] as int;
+        await txn.insert('persons', {...map, 'seq': next});
+      }
       if (relationship != null) {
         await txn.insert('relationships', relationship.toMap());
       }
@@ -45,5 +49,21 @@ class FamilyLocalDataSource {
   Future<void> deletePerson(String id) async {
     final db = await _db.database;
     await db.delete('persons', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> setBirthOrders(List<String> orderedIds) async {
+    final db = await _db.database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (var i = 0; i < orderedIds.length; i++) {
+        batch.update(
+          'persons',
+          {'birth_order': i + 1},
+          where: 'id = ?',
+          whereArgs: [orderedIds[i]],
+        );
+      }
+      await batch.commit(noResult: true);
+    });
   }
 }
