@@ -1,8 +1,8 @@
 name: Build APK
 
 on:
-  # push:
-    # branches: [main, master]
+  push:
+    branches: [main, master]
   pull_request:
   workflow_dispatch:
 
@@ -30,6 +30,21 @@ jobs:
             rm -f test/widget_test.dart
             sed -i 's/android:label="[^"]*"/android:label="Gia phả"/' android/app/src/main/AndroidManifest.xml
           fi
+
+      # Android lint (lintVital) bị crash trên plugin image_picker_android
+      # (NoSuchMethodError: List.removeLast, lỗi của công cụ lint). Tắt lint ở bước build.
+      - name: Tắt Android lint khi build
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/no-lint.gradle <<'EOF'
+          allprojects {
+            tasks.configureEach { task ->
+              if (task.name.startsWith('lintVital') || task.name.startsWith('lintAnalyze')) {
+                task.enabled = false
+              }
+            }
+          }
+          EOF
 
       - run: flutter pub get
 
