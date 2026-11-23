@@ -31,16 +31,42 @@ jobs:
             sed -i 's/android:label="[^"]*"/android:label="Gia phả"/' android/app/src/main/AndroidManifest.xml
           fi
 
-      # Android lint (lintVital) bị crash trên plugin image_picker_android
-      # (NoSuchMethodError: List.removeLast, lỗi của công cụ lint). Tắt lint ở bước build.
-      - name: Tắt Android lint khi build
+      # Mọi bản build phải ký bằng CÙNG một khóa thì mới cài đè (cập nhật) được lên bản cũ
+      # mà không cần gỡ. Mặc định mỗi lần chạy CI sinh một khóa debug mới nên bị "xung đột".
+      - name: Dùng khóa ký cố định
+        run: |
+          if [ -f android-signing/debug.keystore ]; then
+            mkdir -p ~/.android
+            cp android-signing/debug.keystore ~/.android/debug.keystore
+            echo "Đã dùng khóa ký cố định android-signing/debug.keystore"
+          else
+            echo "::warning::Thiếu android-signing/debug.keystore, APK sẽ ký bằng khóa ngẫu nhiên (không cập nhật đè được)."
+          fi
+
+      # 1) Tắt Android lint (lintVital bị crash trên image_picker_android).
+      # 2) Plugin file_picker biên dịch với android-34 nhưng thư viện lifecycle yêu cầu
+      #    compileSdk >= 36 -> nâng compileSdk của mọi module lên 36.
+      - name: Vá cấu hình Gradle
         run: |
           mkdir -p ~/.gradle/init.d
-          cat > ~/.gradle/init.d/no-lint.gradle <<'EOF'
-          allprojects {
-            tasks.configureEach { task ->
+          cat > ~/.gradle/init.d/fix-android.gradle <<'EOF'
+          allprojects { p ->
+            p.tasks.configureEach { task ->
               if (task.name.startsWith('lintVital') || task.name.startsWith('lintAnalyze')) {
                 task.enabled = false
+              }
+            }
+            p.afterEvaluate {
+              def android = p.extensions.findByName('android')
+              if (android != null) {
+                try {
+                  def cur = android.compileSdk
+                  if (cur == null || cur < 36) {
+                    android.compileSdk = 36
+                  }
+                } catch (Throwable ignored) {
+                  try { android.compileSdkVersion(36) } catch (Throwable ignored2) { }
+                }
               }
             }
           }
@@ -57,8 +83,9 @@ jobs:
         run: flutter test
         continue-on-error: true
 
+      # versionCode tăng dần theo số lần chạy để Android chấp nhận là bản cập nhật.
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-number=${{ github.run_number }}
 
       - uses: actions/upload-artifact@v4
         with:
