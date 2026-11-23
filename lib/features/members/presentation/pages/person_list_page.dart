@@ -12,7 +12,7 @@ import 'package:gia_pha/features/members/presentation/providers/family_providers
 import 'package:gia_pha/features/members/presentation/widgets/person_avatar.dart';
 import 'package:gia_pha/features/members/presentation/widgets/relation_note.dart';
 
-enum _SortMode { entry, generation, name }
+enum _SortMode { relation, generation, name }
 
 class PersonListPage extends ConsumerStatefulWidget {
   const PersonListPage({super.key});
@@ -23,7 +23,7 @@ class PersonListPage extends ConsumerStatefulWidget {
 
 class _PersonListPageState extends ConsumerState<PersonListPage> {
   String _query = '';
-  _SortMode _sort = _SortMode.entry;
+  _SortMode _sort = _SortMode.relation;
 
   /// Các thành viên đang được mở rộng để xem người có quan hệ trực tiếp.
   final Set<String> _expanded = {};
@@ -49,10 +49,13 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
             initialValue: _sort,
             onSelected: (m) => setState(() => _sort = m),
             itemBuilder: (_) => const [
-              PopupMenuItem(value: _SortMode.entry, child: Text('Thứ tự nhập')),
+              PopupMenuItem(
+                value: _SortMode.relation,
+                child: Text('Theo mối quan hệ (vợ chồng, con, cháu...)'),
+              ),
               PopupMenuItem(
                 value: _SortMode.generation,
-                child: Text('Theo đời & thứ tự anh em'),
+                child: Text('Theo đời (vợ chồng liền kề)'),
               ),
               PopupMenuItem(value: _SortMode.name, child: Text('Tên A–Z')),
             ],
@@ -71,17 +74,24 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
           data: (data) {
             final gens = data.generations();
             final q = _query.trim().toLowerCase();
-            final people = [
-              for (final p in data.persons)
-                if (q.isEmpty || p.fullName.toLowerCase().contains(q)) p,
+            // Thứ tự theo mối quan hệ: người, vợ/chồng liền sau, rồi con cháu.
+            final order = data.relationOrder();
+            final indexOf = {
+              for (var i = 0; i < order.length; i++) order[i].person.id: i,
+            };
+            final depthOf = {for (final e in order) e.person.id: e.depth};
+            final people = <Person>[
+              for (final e in order)
+                if (q.isEmpty || e.person.fullName.toLowerCase().contains(q)) e.person,
             ];
             switch (_sort) {
-              case _SortMode.entry:
-                break; // đã theo thứ tự nhập từ cơ sở dữ liệu
+              case _SortMode.relation:
+                break;
               case _SortMode.generation:
+                // Cùng đời thì giữ thứ tự theo mối quan hệ nên vợ chồng luôn liền kề nhau.
                 people.sort((a, b) {
                   final c = (gens[a.id] ?? 0).compareTo(gens[b.id] ?? 0);
-                  return c != 0 ? c : compareSiblings(a, b);
+                  return c != 0 ? c : (indexOf[a.id] ?? 0).compareTo(indexOf[b.id] ?? 0);
                 });
               case _SortMode.name:
                 people.sort(_byName);
@@ -115,7 +125,13 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
                       : ListView.builder(
                           padding: const EdgeInsets.only(top: 4, bottom: 92),
                           itemCount: people.length,
-                          itemBuilder: (_, i) => _buildItem(context, data, gens, people[i]),
+                          itemBuilder: (_, i) => _buildItem(
+                            context,
+                            data,
+                            gens,
+                            people[i],
+                            _sort == _SortMode.relation ? (depthOf[people[i].id] ?? 0) : 0,
+                          ),
                         ),
                 ),
               ],
@@ -136,7 +152,9 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
     FamilyData data,
     Map<String, int> gens,
     Person p,
+    int depth,
   ) {
+    final indent = (depth > 5 ? 5 : depth) * 10.0;
     final g = gens[p.id];
     final order = birthOrderLabel(p.birthOrder);
     final sub = [
@@ -153,7 +171,7 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
     return Column(
       children: [
         OrnateCard(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          margin: EdgeInsets.fromLTRB(12 + indent, 5, 12, 5),
           padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
           onTap: () => context.push('/person/${p.id}'),
           child: Row(
@@ -206,7 +224,7 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
         ),
         if (open && hasRelated)
           Container(
-            margin: const EdgeInsets.only(left: 32, right: 14, bottom: 4),
+            margin: EdgeInsets.only(left: 32 + indent, right: 14, bottom: 4),
             padding: const EdgeInsets.only(left: 8),
             decoration: const BoxDecoration(
               border: Border(left: BorderSide(color: AppColors.gold, width: 2)),

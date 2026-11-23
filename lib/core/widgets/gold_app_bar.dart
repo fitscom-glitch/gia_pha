@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
 
 /// AppBar nền ngà, tiêu đề đỏ thẫm, viền vàng–đỏ mảnh phía dưới.
+/// Ở các màn hình con (có thể quay lại) tự thêm nút "Về trang chủ" ở góc phải.
 class GoldAppBar extends StatelessWidget implements PreferredSizeWidget {
   const GoldAppBar({super.key, required this.title, this.actions});
 
@@ -16,9 +18,18 @@ class GoldAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isChildScreen = Navigator.of(context).canPop();
     return AppBar(
       title: Text(title),
-      actions: actions,
+      actions: [
+        ...?actions,
+        if (isChildScreen)
+          IconButton(
+            icon: const Icon(Icons.home),
+            tooltip: 'Về trang chủ',
+            onPressed: () => context.go('/home'),
+          ),
+      ],
       centerTitle: false,
       elevation: 0,
       scrolledUnderElevation: 0,

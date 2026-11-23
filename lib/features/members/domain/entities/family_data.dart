@@ -87,6 +87,42 @@ class FamilyData {
     return sortedSiblings(kids);
   }
 
+  /// Thứ tự theo mối quan hệ: mỗi người được theo sau bởi vợ/chồng, rồi đến các con
+  /// (mỗi người con lại kèm vợ/chồng và con cháu của mình). [depth] là bậc so với gốc.
+  List<({Person person, int depth})> relationOrder() {
+    final result = <({Person person, int depth})>[];
+    final visited = <String>{};
+    final hasParent = <String>{
+      for (final r in relationships)
+        if (r.type == RelationType.parentChild) r.personBId,
+    };
+
+    void visit(Person p, int depth) {
+      visited.add(p.id);
+      result.add((person: p, depth: depth));
+      for (final s in spousesOf(p.id)) {
+        if (visited.add(s.id)) result.add((person: s, depth: depth));
+      }
+      for (final c in childrenOfUnit(p.id)) {
+        if (!visited.contains(c.id)) visit(c, depth + 1);
+      }
+    }
+
+    // Người vào làm dâu/rể (không có cha mẹ nhưng vợ/chồng có) đi kèm vợ/chồng, không làm gốc.
+    bool marriedIn(Person p) =>
+        !hasParent.contains(p.id) &&
+        spousesOf(p.id).any((s) => hasParent.contains(s.id));
+
+    for (final p in persons) {
+      if (visited.contains(p.id) || hasParent.contains(p.id) || marriedIn(p)) continue;
+      visit(p, 0);
+    }
+    for (final p in persons) {
+      if (!visited.contains(p.id)) visit(p, 0); // dữ liệu thiếu/vòng: thêm vào cuối
+    }
+    return result;
+  }
+
   /// Đời của từng người (0 = đời đầu). Người vào làm dâu/rể (không có cha mẹ)
   /// lấy cùng đời với vợ/chồng.
   Map<String, int> generations() {

@@ -64,6 +64,49 @@ void main() {
     });
   });
 
+  group('thứ tự theo mối quan hệ', () {
+    List<String> ids(FamilyData d) => d.relationOrder().map((e) => e.person.id).toList();
+
+    test('vợ chồng liền nhau, rồi con cháu theo từng nhánh', () {
+      final data = FamilyData(
+        [
+          _p('ong', seq: 1),
+          _p('ba', seq: 2),
+          _p('c1', seq: 3),
+          _p('v1', seq: 4),
+          _p('c2', seq: 5),
+          _p('g1', seq: 6),
+        ],
+        [
+          _spouse('ong', 'ba'),
+          _parent('ong', 'c1'),
+          _spouse('c1', 'v1'),
+          _parent('ong', 'c2'),
+          _parent('c1', 'g1'),
+        ],
+      );
+      // c1 và cả nhánh của c1 (vợ, con) đứng trước c2
+      expect(ids(data), ['ong', 'ba', 'c1', 'v1', 'g1', 'c2']);
+      expect(data.relationOrder().map((e) => e.depth), [0, 0, 1, 1, 2, 1]);
+    });
+
+    test('dâu/rể nhập trước chồng/vợ vẫn đi kèm vợ/chồng, không làm gốc', () {
+      final data = FamilyData(
+        [_p('dau', seq: 1), _p('cha', seq: 2), _p('con', seq: 3)],
+        [_spouse('cha', 'dau'), _parent('cha', 'con')],
+      );
+      expect(ids(data), ['cha', 'dau', 'con']);
+    });
+
+    test('mọi người đều có mặt, kể cả người chưa có quan hệ', () {
+      final data = FamilyData(
+        [_p('a', seq: 1), _p('b', seq: 2), _p('c', seq: 3)],
+        [_parent('a', 'b')],
+      );
+      expect(ids(data), ['a', 'b', 'c']);
+    });
+  });
+
   group('đời', () {
     final data = FamilyData(
       [_p('ong'), _p('ba'), _p('cha'), _p('dau'), _p('chau')],

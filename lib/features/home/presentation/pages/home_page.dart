@@ -157,8 +157,9 @@ class _StatCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget card(String label, int value) => Expanded(
+    Widget card(String label, int value, VoidCallback onTap) => Expanded(
           child: OrnateCard(
+            onTap: onTap,
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Column(
               children: [
@@ -180,9 +181,9 @@ class _StatCards extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         children: [
-          card('Thành viên', members),
+          card('Thành viên', members, () => context.go('/members')),
           const SizedBox(width: 8),
-          card('Số đời', generations),
+          card('Số đời', generations, () => context.push('/tree')),
         ],
       ),
     );

@@ -43,9 +43,9 @@ class PhaDoCanvas extends StatelessWidget {
   final void Function(String personId) onOpenPerson;
 
   static const double _band = 58;
-  static const double _header = 250;
+  static const double _header = 220;
   static const double _labelW = 130;
-  static const double _sideW = 74;
+  static const double _sideW = 24;
   static const double _footer = 80;
   static const double _minTreeH = 440;
   static const double _minWidth = 980;
@@ -55,9 +55,6 @@ class PhaDoCanvas extends StatelessWidget {
     final h = 2 * _band + _header + (layout.height < _minTreeH ? _minTreeH : layout.height) + _footer;
     return Size(w < _minWidth ? _minWidth : w, h);
   }
-
-  static const _leftWords = ['Phúc', 'Đức', 'Tổ', 'Tiên', 'Giao', 'Trọng', 'Từ', 'Kiếp', 'Trước'];
-  static const _rightWords = ['Nhân', 'Tâm', 'Con', 'Cháu', 'Bồi', 'Đắp', 'Mai', 'Về', 'Sau'];
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +66,6 @@ class PhaDoCanvas extends StatelessWidget {
     final cfg = layout.config;
     final trimmed = clanName.trim();
     final title = trimmed.isEmpty ? 'GIA TỘC' : '${trimmed.toUpperCase()} TỘC';
-    final seal = trimmed.isEmpty ? '' : '${trimmed.split(RegExp(r'\s+')).first}\nTộc';
 
     return SizedBox(
       width: size.width,
@@ -85,31 +81,13 @@ class PhaDoCanvas extends StatelessWidget {
             height: layout.height < _minTreeH ? _minTreeH : layout.height,
             child: const MotifView(motif: dragonMotif, color: Color(0x22E0A800)),
           ),
-          // hai rồng chầu hai bên
-          const Positioned(
-            left: _band + 8,
-            top: _band + 14,
-            width: 420,
-            height: 220,
-            child: MotifView(motif: dragonMotif, color: Color(0xFFF79A3C)),
-          ),
-          Positioned(
-            right: _band + 8,
-            top: _band + 14,
-            width: 420,
-            height: 220,
-            child: const MotifView(motif: dragonMotif, color: Color(0xFFF79A3C), flipX: true),
-          ),
           Positioned(
             left: (size.width - 620) / 2,
-            top: _band + 40,
+            top: _band + 28,
             width: 620,
             height: 170,
             child: _ScrollBanner(title: title, place: place),
           ),
-          // câu chữ hai bên
-          _vertical(_leftWords, left: _band + 2, top: treeY + 20),
-          _vertical(_rightWords, right: _band + 2, top: treeY + 20),
           // nhãn các đời
           for (final r in layout.rows)
             Positioned(
@@ -152,61 +130,6 @@ class PhaDoCanvas extends StatelessWidget {
                   onTap: () => onOpenPerson(p.id),
                 ),
               ),
-          if (seal.isNotEmpty)
-            Positioned(
-              right: _band + 22,
-              bottom: _band + 16,
-              width: 118,
-              height: 118,
-              child: Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8E1B1B),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF5C0A0F), width: 3),
-                ),
-                child: Text(
-                  seal,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'serif',
-                    fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 26,
-                    height: 1.1,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _vertical(List<String> words, {double? left, double? right, required double top}) {
-    return Positioned(
-      left: left,
-      right: right,
-      top: top,
-      width: _sideW - 6,
-      child: Column(
-        children: [
-          for (final w in words)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Text(
-                w,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'serif',
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 24,
-                  color: Color(0xFF2B1B12),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -451,16 +374,20 @@ class _PhaCard extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      person.fullName.toUpperCase(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11.5,
-                        height: 1.15,
-                        color: _navy,
+                    // Tên dài quá ô thì tự thu nhỏ chữ để vẫn nằm trên một hàng.
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        person.fullName.toUpperCase(),
+                        maxLines: 1,
+                        softWrap: false,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          height: 1.15,
+                          color: _navy,
+                        ),
                       ),
                     ),
                     if (note != null)
