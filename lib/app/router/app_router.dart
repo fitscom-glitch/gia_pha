@@ -5,6 +5,7 @@ import 'package:gia_pha/features/articles/presentation/pages/article_edit_page.d
 import 'package:gia_pha/features/articles/presentation/pages/article_list_page.dart';
 import 'package:gia_pha/features/articles/presentation/pages/article_read_page.dart';
 import 'package:gia_pha/features/contacts/presentation/pages/contacts_page.dart';
+import 'package:gia_pha/features/events/presentation/pages/calendar_page.dart';
 import 'package:gia_pha/features/family_tree/presentation/pages/tree_page.dart';
 import 'package:gia_pha/features/heirlooms/presentation/pages/heirlooms_page.dart';
 import 'package:gia_pha/features/home/presentation/pages/home_page.dart';
@@ -68,6 +69,7 @@ final appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(path: '/calendar', builder: (_, __) => const CalendarPage()),
     GoRoute(path: '/honors', builder: (_, __) => const HonorListPage()),
     GoRoute(path: '/heirlooms', builder: (_, __) => const HeirloomsPage()),
     GoRoute(path: '/contacts', builder: (_, __) => const ContactsPage()),

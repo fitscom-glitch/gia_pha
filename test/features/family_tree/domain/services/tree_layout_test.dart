@@ -75,6 +75,29 @@ void main() {
       expect(layout.width, greaterThanOrEqualTo(kids.last.x + cfg.cardW));
     });
 
+    test('gộp nhiều đời vào một hàng: cùng y, nằm nối tiếp, không có nét nối trong hàng', () {
+      final data = FamilyData(
+        [_p('a'), _p('b'), _p('c'), _p('d')],
+        [_parent('a', 'b'), _parent('b', 'c'), _parent('c', 'd')],
+      );
+      // đời 1 ở hàng 0; đời 2, 3 gộp vào hàng 1; đời 4 ở hàng 2
+      final rowOf = {'a': 0, 'b': 1, 'c': 1, 'd': 2};
+      final layout = layoutTree(
+        buildDescendantTree(data, 'a')!,
+        rowOf: (p) => rowOf[p.id]!,
+      );
+      PositionedUnit u(String id) =>
+          layout.units.firstWhere((x) => x.node.person.id == id);
+
+      expect(u('b').y, u('c').y);
+      expect(u('c').x, greaterThan(u('b').x));
+      expect(u('a').y, lessThan(u('b').y));
+      expect(u('d').y, greaterThan(u('c').y));
+      expect(layout.rows.map((r) => r.row), [0, 1, 2]);
+      // chỉ có nét nối a->b và c->d; b->c nằm cùng hàng nên không vẽ
+      expect(layout.childEdges.length, 2);
+    });
+
     test('đơn vị vợ chồng đủ rộng cho hai thẻ', () {
       final data = FamilyData(
         [_p('ong'), _p('ba', Gender.female)],

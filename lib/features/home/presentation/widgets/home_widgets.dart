@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:gia_pha/features/events/presentation/pages/event_sheet.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/utils/lunar_calendar.dart';
 import 'package:gia_pha/core/widgets/dragon_phoenix_banner.dart';
@@ -84,6 +85,7 @@ class HomeDateCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: OrnateCard(
         padding: EdgeInsets.zero,
+        onTap: () => context.push('/calendar'),
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -106,7 +108,7 @@ class HomeDateCard extends StatelessWidget {
                   top: 'Tháng ${lunar.month}${lunar.isLeap ? ' (nhuận)' : ''}',
                   day: '${lunar.day}',
                   bottom: 'Năm ${LunarCalendar.yearName(lunar.year)}',
-                  note: '',
+                  note: 'Chạm để mở lịch',
                 ),
               ),
             ],
@@ -195,6 +197,7 @@ class HomeAnniversarySection extends StatelessWidget {
         AnniversaryType.birthday => AppColors.goldDark,
         AnniversaryType.deathAnniversary => AppColors.ink,
         AnniversaryType.festival => AppColors.red,
+        AnniversaryType.custom => const Color(0xFF1E88E5),
       };
 
   static String _countdown(int days) => switch (days) {
@@ -211,16 +214,26 @@ class HomeAnniversarySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
-            child: Text(
-              'Ngày kỷ niệm',
-              style: TextStyle(
-                fontFamily: 'serif',
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-                color: AppColors.redDark,
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 0, 4),
+            child: Row(
+              children: [
+                const Text(
+                  'Ngày kỷ niệm',
+                  style: TextStyle(
+                    fontFamily: 'serif',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    color: AppColors.redDark,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => showEventSheet(context, initialDate: today),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Thêm'),
+                ),
+              ],
             ),
           ),
           if (items.isEmpty)
@@ -235,9 +248,11 @@ class HomeAnniversarySection extends StatelessWidget {
               OrnateCard(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(10),
-                onTap: a.personId == null
-                    ? null
-                    : () => context.push('/person/${a.personId}'),
+                onTap: a.personId != null
+                    ? () => context.push('/person/${a.personId}')
+                    : a.event != null
+                        ? () => showEventSheet(context, event: a.event)
+                        : null,
                 child: Row(
                   children: [
                     Container(

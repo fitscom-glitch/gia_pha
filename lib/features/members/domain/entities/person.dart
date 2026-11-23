@@ -15,6 +15,7 @@ class Person {
     this.email,
     this.seq = 0,
     this.birthOrder,
+    this.photoPath,
   });
 
   final String id;
@@ -34,6 +35,9 @@ class Person {
 
   /// "Con thứ mấy" trong anh chị em (1 = con trưởng). Null = chưa đặt, xếp theo [seq].
   final int? birthOrder;
+
+  /// Đường dẫn ảnh đại diện trong bộ nhớ của ứng dụng.
+  final String? photoPath;
 
   bool get isDeceased => deathDate != null;
 
@@ -59,5 +63,24 @@ class Person {
         email: email,
         seq: seq,
         birthOrder: birthOrder,
+        photoPath: photoPath,
+      );
+
+  /// Bản sao với ảnh đại diện mới (cho phép đặt về null).
+  Person withPhoto(String? path) => Person(
+        id: id,
+        fullName: fullName,
+        gender: gender,
+        birthDate: birthDate,
+        deathDate: deathDate,
+        birthPlace: birthPlace,
+        occupation: occupation,
+        bio: bio,
+        phone: phone,
+        address: address,
+        email: email,
+        seq: seq,
+        birthOrder: birthOrder,
+        photoPath: path,
       );
 }

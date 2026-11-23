@@ -6,6 +6,12 @@
 lịch dương/âm, ngày giỗ và sinh nhật, lịch sử dòng họ, tộc ước & hương lễ, chuyện cổ kim, bảng vinh danh,
 di sản & kỷ vật (ảnh), danh bạ, sao lưu/khôi phục.
 
+**Phả đồ**: dạng tranh treo (khung vàng cam, rồng, băng rôn tên dòng họ), mỗi đời một hàng có nhãn "ĐỜI THỨ N",
+có thể gộp nhiều đời vào một hàng (Cài đặt > Gộp nhiều đời, vd `2-5; 8-9`); màu thẻ lệch nhẹ theo từng đời.
+
+**Khác**: ảnh đại diện thành viên, ghi chú quan hệ dưới tên, danh sách mở rộng xem vợ/chồng và con,
+ngày kỷ niệm tự nhập (dương/âm lịch), bảng lịch âm dương, sao lưu ra file .zip kèm hình ảnh.
+
 **Thứ tự anh em**: các con luôn xếp theo "con thứ mấy" nếu đã đặt (ô trong form thành viên hoặc nút ⇅ ở mục Con
 của trang chi tiết), nếu chưa đặt thì theo thứ tự nhập vào. Không bao giờ xếp theo bảng chữ cái.
 

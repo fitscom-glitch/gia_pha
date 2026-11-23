@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
+import 'package:gia_pha/features/events/presentation/providers/event_providers.dart';
 import 'package:gia_pha/features/home/domain/services/anniversary_service.dart';
 import 'package:gia_pha/features/home/presentation/widgets/home_widgets.dart';
 import 'package:gia_pha/features/members/presentation/providers/family_providers.dart';
@@ -16,10 +17,11 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(familyProvider).valueOrNull;
     final settings = ref.watch(settingsProvider).valueOrNull;
+    final events = ref.watch(eventsProvider).valueOrNull ?? const [];
     final now = DateTime.now();
     final anniversaries = data == null
         ? const <Anniversary>[]
-        : upcomingAnniversaries(data, now, limit: 8);
+        : upcomingAnniversaries(data, now, limit: 10, events: events);
 
     return Scaffold(
       appBar: const GoldAppBar(title: 'Trang chủ'),

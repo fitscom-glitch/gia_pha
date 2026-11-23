@@ -16,6 +16,7 @@ class PersonModel extends Person {
     super.email,
     super.seq,
     super.birthOrder,
+    super.photoPath,
   });
 
   factory PersonModel.fromEntity(Person p) => PersonModel(
@@ -32,6 +33,7 @@ class PersonModel extends Person {
         email: p.email,
         seq: p.seq,
         birthOrder: p.birthOrder,
+        photoPath: p.photoPath,
       );
 
   factory PersonModel.fromMap(Map<String, Object?> m) => PersonModel(
@@ -48,6 +50,7 @@ class PersonModel extends Person {
         email: m['email'] as String?,
         seq: (m['seq'] as int?) ?? 0,
         birthOrder: m['birth_order'] as int?,
+        photoPath: m['photo_path'] as String?,
       );
 
   /// Không gồm `seq`: số thứ tự nhập do datasource cấp khi thêm mới.
@@ -64,6 +67,7 @@ class PersonModel extends Person {
         'address': address,
         'email': email,
         'birth_order': birthOrder,
+        'photo_path': photoPath,
       };
 
   static DateTime? _date(Object? v) =>

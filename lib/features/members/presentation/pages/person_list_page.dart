@@ -10,6 +10,7 @@ import 'package:gia_pha/features/members/domain/entities/family_data.dart';
 import 'package:gia_pha/features/members/domain/entities/person.dart';
 import 'package:gia_pha/features/members/presentation/providers/family_providers.dart';
 import 'package:gia_pha/features/members/presentation/widgets/person_avatar.dart';
+import 'package:gia_pha/features/members/presentation/widgets/relation_note.dart';
 
 enum _SortMode { entry, generation, name }
 
@@ -23,6 +24,9 @@ class PersonListPage extends ConsumerStatefulWidget {
 class _PersonListPageState extends ConsumerState<PersonListPage> {
   String _query = '';
   _SortMode _sort = _SortMode.entry;
+
+  /// Các thành viên đang được mở rộng để xem người có quan hệ trực tiếp.
+  final Set<String> _expanded = {};
 
   /// Theo tên gọi (từ cuối), rồi họ tên đầy đủ.
   static int _byName(Person a, Person b) {
@@ -55,7 +59,7 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
           ),
           IconButton(
             icon: const Icon(Icons.account_tree),
-            tooltip: 'Sơ đồ cây',
+            tooltip: 'Phả đồ',
             onPressed: () => context.push('/tree'),
           ),
         ],
@@ -111,61 +115,7 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
                       : ListView.builder(
                           padding: const EdgeInsets.only(top: 4, bottom: 92),
                           itemCount: people.length,
-                          itemBuilder: (_, i) {
-                            final p = people[i];
-                            final g = gens[p.id];
-                            final order = birthOrderLabel(p.birthOrder);
-                            final sub = [
-                              if (g != null) 'Đời ${g + 1}',
-                              if (order != null) order,
-                              if (p.lifespan.isNotEmpty) p.lifespan,
-                            ].join(' · ');
-                            return OrnateCard(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 5,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              onTap: () => context.push('/person/${p.id}'),
-                              child: Row(
-                                children: [
-                                  PersonAvatar(p, radius: 24),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          p.fullName,
-                                          style: const TextStyle(
-                                            fontFamily: 'serif',
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 16,
-                                            color: AppColors.ink,
-                                          ),
-                                        ),
-                                        if (sub.isNotEmpty)
-                                          Text(
-                                            sub,
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                              color: AppColors.redDark,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.chevron_right,
-                                    color: AppColors.goldDark,
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                          itemBuilder: (_, i) => _buildItem(context, data, gens, people[i]),
                         ),
                 ),
               ],
@@ -177,6 +127,133 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
         onPressed: () => context.push('/form'),
         icon: const Icon(Icons.person_add),
         label: const Text('Thêm'),
+      ),
+    );
+  }
+
+  Widget _buildItem(
+    BuildContext context,
+    FamilyData data,
+    Map<String, int> gens,
+    Person p,
+  ) {
+    final g = gens[p.id];
+    final order = birthOrderLabel(p.birthOrder);
+    final sub = [
+      if (g != null) 'Đời ${g + 1}',
+      if (order != null) order,
+      if (p.lifespan.isNotEmpty) p.lifespan,
+    ].join(' · ');
+    final note = relationNote(data, p);
+    final spouses = data.spousesOf(p.id);
+    final kids = data.childrenOfUnit(p.id);
+    final hasRelated = spouses.isNotEmpty || kids.isNotEmpty;
+    final open = _expanded.contains(p.id);
+
+    return Column(
+      children: [
+        OrnateCard(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+          onTap: () => context.push('/person/${p.id}'),
+          child: Row(
+            children: [
+              PersonAvatar(p, radius: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.fullName,
+                      style: const TextStyle(
+                        fontFamily: 'serif',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    if (sub.isNotEmpty)
+                      Text(sub, style: const TextStyle(fontSize: 13, color: AppColors.redDark)),
+                    if (note != null)
+                      Text(
+                        note,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontStyle: FontStyle.italic,
+                          color: AppColors.goldDark,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (hasRelated)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: open ? 'Thu gọn' : 'Xem vợ/chồng và con',
+                  icon: Icon(
+                    open ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: AppColors.red,
+                  ),
+                  onPressed: () => setState(() {
+                    if (!_expanded.remove(p.id)) _expanded.add(p.id);
+                  }),
+                )
+              else
+                const SizedBox(width: 8),
+            ],
+          ),
+        ),
+        if (open && hasRelated)
+          Container(
+            margin: const EdgeInsets.only(left: 32, right: 14, bottom: 4),
+            padding: const EdgeInsets.only(left: 8),
+            decoration: const BoxDecoration(
+              border: Border(left: BorderSide(color: AppColors.gold, width: 2)),
+            ),
+            child: Column(
+              children: [
+                for (final s in spouses) _relatedTile(context, s, spouseLabel(s.gender)),
+                for (final c in kids)
+                  _relatedTile(context, c, birthOrderLabel(c.birthOrder) ?? 'Con'),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _relatedTile(BuildContext context, Person p, String role) {
+    return InkWell(
+      onTap: () => context.push('/person/${p.id}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        child: Row(
+          children: [
+            PersonAvatar(p, radius: 16),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                p.fullName,
+                style: const TextStyle(
+                  fontFamily: 'serif',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
+                  color: AppColors.ink,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.gold),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(role, style: const TextStyle(fontSize: 11.5, color: AppColors.goldDark)),
+            ),
+            const Icon(Icons.chevron_right, size: 18, color: AppColors.goldDark),
+          ],
+        ),
       ),
     );
   }

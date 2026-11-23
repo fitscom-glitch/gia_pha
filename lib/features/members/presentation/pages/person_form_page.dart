@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:image_picker/image_picker.dart';
+import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,6 +38,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
   DateTime? _birth;
   DateTime? _death;
   bool _saving = false;
+  String? _pickedPhoto;
   Person? _existing;
 
   @override
@@ -73,6 +78,51 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
     };
   }
 
+  Future<void> _pickPhoto() async {
+    final x = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 85,
+    );
+    if (x != null) setState(() => _pickedPhoto = x.path);
+  }
+
+  Widget _photoPicker() {
+    final existing = _existing?.photoPath;
+    ImageProvider? image;
+    if (_pickedPhoto != null) {
+      image = FileImage(File(_pickedPhoto!));
+    } else if (existing != null && File(existing).existsSync()) {
+      image = FileImage(File(existing));
+    }
+    return Center(
+      child: GestureDetector(
+        onTap: _pickPhoto,
+        child: Stack(
+          children: [
+            CircleAvatar(
+              radius: 48,
+              backgroundColor: AppColors.paperDark,
+              backgroundImage: image,
+              child: image == null
+                  ? const Icon(Icons.person, size: 48, color: AppColors.goldDark)
+                  : null,
+            ),
+            const Positioned(
+              right: 0,
+              bottom: 0,
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: AppColors.red,
+                child: Icon(Icons.camera_alt, size: 18, color: AppColors.goldLight),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String? _nullIfEmpty(String s) => s.trim().isEmpty ? null : s.trim();
 
   Future<void> _save() async {
@@ -91,12 +141,14 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       address: _existing?.address,
       email: _existing?.email,
       seq: _existing?.seq ?? 0,
+      photoPath: _existing?.photoPath,
       birthOrder: int.tryParse(_order.text.trim()),
     );
     await ref.read(familyProvider.notifier).saveMember(
           person,
           anchorId: widget.anchorId,
           addAs: widget.addAs,
+          newPhotoSourcePath: _pickedPhoto,
         );
     if (mounted) context.pop();
   }
@@ -110,6 +162,8 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            _photoPicker(),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _name,
               textCapitalization: TextCapitalization.words,

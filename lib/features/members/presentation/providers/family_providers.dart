@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gia_pha/core/database/database_provider.dart';
+import 'package:gia_pha/core/storage/image_store.dart';
 import 'package:gia_pha/features/members/data/datasources/family_local_data_source.dart';
 import 'package:gia_pha/features/members/data/repositories/family_repository_impl.dart';
 import 'package:gia_pha/features/members/domain/entities/family_data.dart';
@@ -35,6 +36,10 @@ final reorderSiblingsProvider = Provider<ReorderSiblings>(
   (ref) => ReorderSiblings(ref.watch(familyRepositoryProvider)),
 );
 
+/// Nơi lưu ảnh đại diện.
+final avatarStoreProvider =
+    Provider<ImageStore>((ref) => const ImageStore(folder: 'avatars'));
+
 // --- State ---
 
 final familyProvider =
@@ -44,17 +49,28 @@ class FamilyNotifier extends AsyncNotifier<FamilyData> {
   @override
   Future<FamilyData> build() => ref.read(loadFamilyProvider)();
 
+  /// [newPhotoSourcePath]: ảnh vừa chọn từ thư viện; được chép vào bộ nhớ ứng dụng.
   Future<void> saveMember(
     Person person, {
     String? anchorId,
     AddAs? addAs,
+    String? newPhotoSourcePath,
   }) async {
-    await ref.read(saveMemberProvider)(person, anchorId: anchorId, addAs: addAs);
+    var toSave = person;
+    if (newPhotoSourcePath != null) {
+      final store = ref.read(avatarStoreProvider);
+      final stored = await store.saveCopy(newPhotoSourcePath, person.id);
+      await store.delete(person.photoPath);
+      toSave = person.withPhoto(stored);
+    }
+    await ref.read(saveMemberProvider)(toSave, anchorId: anchorId, addAs: addAs);
     await _reload();
   }
 
   Future<void> deleteMember(String id) async {
+    final photo = state.valueOrNull?.byId(id)?.photoPath;
     await ref.read(deleteMemberProvider)(id);
+    await ref.read(avatarStoreProvider).delete(photo);
     await _reload();
   }
 

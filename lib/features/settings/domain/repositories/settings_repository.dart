@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:gia_pha/features/settings/domain/entities/app_settings.dart';
 
 abstract interface class SettingsRepository {
@@ -6,10 +8,10 @@ abstract interface class SettingsRepository {
 }
 
 abstract interface class BackupRepository {
-  /// Toàn bộ dữ liệu (không gồm file ảnh) dưới dạng JSON.
-  Future<String> exportJson();
+  /// Gói toàn bộ dữ liệu và hình ảnh thành một file .zip.
+  Future<Uint8List> exportArchive();
 
-  /// Thay thế TOÀN BỘ dữ liệu hiện có bằng nội dung sao lưu.
-  /// Ném [FormatException] nếu nội dung không hợp lệ.
-  Future<void> importJson(String source);
+  /// Thay thế TOÀN BỘ dữ liệu hiện có bằng nội dung file sao lưu .zip.
+  /// Ném [FormatException] nếu file không hợp lệ.
+  Future<void> importArchive(Uint8List bytes);
 }

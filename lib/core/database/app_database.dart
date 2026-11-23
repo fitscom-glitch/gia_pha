@@ -7,7 +7,7 @@ class AppDatabase {
   AppDatabase._();
   static final AppDatabase instance = AppDatabase._();
 
-  static const _version = 2;
+  static const _version = 3;
 
   /// Key = phiên bản đích.
   static final Map<int, Future<void> Function(Database db)> _migrations = {
@@ -20,6 +20,10 @@ class AppDatabase {
       );
       await db.execute('ALTER TABLE persons ADD COLUMN birth_order INTEGER');
       await db.execute('UPDATE persons SET seq = rowid');
+      await _createExtraTables(db);
+    },
+    3: (db) async {
+      await db.execute('ALTER TABLE persons ADD COLUMN photo_path TEXT');
       await _createExtraTables(db);
     },
   };
@@ -54,7 +58,8 @@ class AppDatabase {
         address TEXT,
         email TEXT,
         seq INTEGER NOT NULL DEFAULT 0,
-        birth_order INTEGER
+        birth_order INTEGER,
+        photo_path TEXT
       )''');
     await db.execute('''
       CREATE TABLE relationships (
@@ -103,6 +108,18 @@ class AppDatabase {
       CREATE TABLE IF NOT EXISTS settings (
         k TEXT PRIMARY KEY,
         v TEXT NOT NULL
+      )''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS events (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        note TEXT,
+        day INTEGER NOT NULL,
+        month INTEGER NOT NULL,
+        year INTEGER NOT NULL,
+        is_lunar INTEGER NOT NULL DEFAULT 0,
+        repeat_yearly INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL
       )''');
   }
 
