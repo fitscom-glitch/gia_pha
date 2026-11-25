@@ -347,7 +347,7 @@ class _EmptyState extends StatelessWidget {
             children: [
               SizedBox(width: 140, height: 66, child: DragonImage(faceRight: true)),
               SizedBox(width: 8),
-              SizedBox(width: 140, height: 66, child: DragonImage(faceRight: false)),
+              SizedBox(width: 100, height: 72, child: PhoenixImage(faceRight: false)),
             ],
           ),
           const SizedBox(height: 12),

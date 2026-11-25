@@ -77,6 +77,7 @@ class _Layouter {
   final units = <PositionedUnit>[];
   final childEdges = <TreeEdge>[];
   final spouseLinks = <TreeEdge>[];
+  /// Tọa độ x giữa thẻ của người huyết thống (thẻ đầu của đơn vị), nơi nét nối bắt đầu/kết thúc.
   final _centers = <TreeNode, double>{};
   int baseRow = 0;
   int maxOffset = 0;
@@ -145,7 +146,7 @@ class _Layouter {
         final midY = y + c.cardH / 2;
         spouseLinks.add(TreeEdge(right, midY, right + c.spouseGap, midY));
       }
-      _centers[m] = x + w / 2;
+      _centers[m] = x + c.cardW / 2;
       x += w + c.hGap;
     }
     var childLeft = left + (sw - exitsW(s)) / 2;

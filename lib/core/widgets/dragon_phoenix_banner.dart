@@ -3,7 +3,7 @@ import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/widgets/art_assets.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 
-/// Biểu ngữ "lưỡng long chầu": hai rồng quay mặt vào nhau ở phía dưới.
+/// Biểu ngữ "rồng phụng chầu": rồng bên trái, phụng bên phải, quay mặt vào nhau ở phía dưới.
 /// Giữa là [title] + [subtitle], hoặc một câu [quote] nếu có.
 class DragonPhoenixBanner extends StatelessWidget {
   const DragonPhoenixBanner({
@@ -20,7 +20,7 @@ class DragonPhoenixBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 176,
+      height: 186,
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -47,7 +47,7 @@ class DragonPhoenixBanner extends StatelessWidget {
                 children: [
                   Expanded(child: _center()),
                   const SizedBox(
-                    height: 66,
+                    height: 74,
                     child: Row(
                       children: [
                         Expanded(
@@ -55,7 +55,7 @@ class DragonPhoenixBanner extends StatelessWidget {
                         ),
                         SizedBox(width: 4),
                         Expanded(
-                          child: DragonImage(faceRight: false, alignment: Alignment.centerLeft),
+                          child: PhoenixImage(faceRight: false, alignment: Alignment.centerLeft),
                         ),
                       ],
                     ),

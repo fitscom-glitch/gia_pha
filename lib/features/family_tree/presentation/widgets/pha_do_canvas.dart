@@ -55,20 +55,24 @@ class PhaDoCanvas extends StatelessWidget {
   final bool showWatermark;
 
   static const double _band = 58;
-  static const double _header = 290;
   static const double _labelW = 130;
   static const double _sideW = 24;
   static const double _footer = 80;
   static const double _minTreeH = 440;
   static const double _minWidth = 1400;
-  static const double _bannerW = 680;
-  static const double _dragonW = 360;
-  static const double _dragonOverlap = 70;
+
+  /// Hình học phần đầu (băng rôn + hai rồng): mọi kích thước tỉ lệ theo chiều rộng phả đồ,
+  /// nên phả đồ càng lớn thì băng rôn và rồng càng to.
+  static _HeaderGeom _geom(double canvasWidth) => _HeaderGeom(canvasWidth, _band + _sideW, _band);
 
   static Size sizeOf(TreeLayoutResult layout) {
-    final w = layout.width + 2 * (_band + _sideW) + _labelW;
-    final h = 2 * _band + _header + (layout.height < _minTreeH ? _minTreeH : layout.height) + _footer;
-    return Size(w < _minWidth ? _minWidth : w, h);
+    final w0 = layout.width + 2 * (_band + _sideW) + _labelW;
+    final w = w0 < _minWidth ? _minWidth : w0;
+    final h = 2 * _band +
+        _geom(w).height +
+        (layout.height < _minTreeH ? _minTreeH : layout.height) +
+        _footer;
+    return Size(w, h);
   }
 
   @override
@@ -77,7 +81,8 @@ class PhaDoCanvas extends StatelessWidget {
     final contentLeft = _band + _sideW + _labelW;
     final innerW = size.width - contentLeft - _sideW - _band;
     final treeX = contentLeft + (innerW - layout.width) / 2;
-    final treeY = _band + _header;
+    final geom = _geom(size.width);
+    final treeY = _band + geom.height;
     final cfg = layout.config;
     final trimmed = clanName.trim();
     final title = trimmed.isEmpty ? 'GIA TỘC' : '${trimmed.toUpperCase()} TỘC';
@@ -99,18 +104,11 @@ class PhaDoCanvas extends StatelessWidget {
                 child: LayerImage(path: l.path, fit: BoxFit.cover),
               ),
             ),
-          // hình rồng mờ làm nền
-          if (showWatermark)
-            Positioned(
-              left: contentLeft + innerW * 0.08,
-              top: treeY,
-              width: innerW * 0.84,
-              height: layout.height < _minTreeH ? _minTreeH : layout.height,
-              child: const DragonImage(opacity: 0.09),
-            ),
+          // hình rồng chìm: phủ cả nền trong khung, tự co dãn theo kích thước phả đồ
+          if (showWatermark) ..._watermark(size),
           for (final l in layers.where((l) => l.kind == PhaDoLayerKind.decor && !l.front))
             _decor(l, size),
-          if (showBanner) ..._buildHeader(size, title),
+          if (showBanner) ..._buildHeader(geom, size, title),
           // nhãn các đời
           for (final r in layout.rows)
             Positioned(
@@ -160,33 +158,49 @@ class PhaDoCanvas extends StatelessWidget {
     );
   }
 
-  /// Băng rôn ở giữa, hai rồng chầu hai bên (đầu quay vào băng rôn).
-  List<Widget> _buildHeader(Size size, String title) {
-    const bannerH = _bannerW / ArtAssets.bannerAspect;
-    const dragonH = _dragonW / ArtAssets.dragonAspect;
-    const top = _band + 14;
+  /// Rồng chìm: một hoặc vài con rồng (xen kẽ quay trái/phải) lấp đầy phần nền trong khung.
+  List<Widget> _watermark(Size size) {
+    const edge = _band + 8.0;
+    final areaW = size.width - 2 * edge;
+    final areaH = size.height - 2 * edge;
+    final n = math.max(1, (areaW / (areaH * ArtAssets.dragonAspect)).round());
+    final w = areaW / n;
+    return [
+      for (var i = 0; i < n; i++)
+        Positioned(
+          left: edge + i * w,
+          top: edge,
+          width: w,
+          height: areaH,
+          child: DragonImage(faceRight: i.isEven, opacity: 0.11),
+        ),
+    ];
+  }
+
+  /// Băng rôn ở giữa, hai rồng chầu hai bên (không đè lên nhau, thấy đủ đầu rồng).
+  List<Widget> _buildHeader(_HeaderGeom g, Size size, String title) {
     final cx = size.width / 2;
-    final dragonTop = top + (bannerH - dragonH) / 2 + 12;
+    final dragonTop = g.top + (g.bannerH - g.dragonH) / 2 + g.bannerH * 0.04;
     return [
       Positioned(
-        left: cx - _bannerW / 2 - _dragonW + _dragonOverlap,
+        left: cx - g.bannerW / 2 - g.dragonW,
         top: dragonTop,
-        width: _dragonW,
-        height: dragonH,
+        width: g.dragonW,
+        height: g.dragonH,
         child: const DragonImage(faceRight: true),
       ),
       Positioned(
-        left: cx + _bannerW / 2 - _dragonOverlap,
+        left: cx + g.bannerW / 2,
         top: dragonTop,
-        width: _dragonW,
-        height: dragonH,
+        width: g.dragonW,
+        height: g.dragonH,
         child: const DragonImage(faceRight: false),
       ),
       Positioned(
-        left: cx - _bannerW / 2,
-        top: top,
-        width: _bannerW,
-        height: bannerH,
+        left: cx - g.bannerW / 2,
+        top: g.top,
+        width: g.bannerW,
+        height: g.bannerH,
         child: _ImageBanner(title: title, place: place),
       ),
     ];
@@ -220,7 +234,24 @@ class PhaDoCanvas extends StatelessWidget {
   }
 }
 
-/// Băng rôn bằng hình: chữ "PHẢ ĐỒ" + tên dòng họ + địa danh nằm trên nền đỏ ở giữa.
+/// Kích thước phần đầu phả đồ, tỉ lệ theo chiều rộng canvas.
+class _HeaderGeom {
+  _HeaderGeom(double canvasWidth, double sideInset, double band) {
+    final inner = canvasWidth - 2 * sideInset;
+    final span = math.min(inner, 3600.0);
+    bannerW = span * 0.50;
+    bannerH = bannerW / ArtAssets.bannerAspect;
+    dragonW = span * 0.25;
+    dragonH = dragonW / ArtAssets.dragonAspect;
+    top = band + math.max(14.0, bannerH * 0.06);
+    // chiều cao từ mép trên canvas đến chỗ bắt đầu cây (tính cả hai lề khung `band`)
+    height = (top - band) + bannerH + math.max(24.0, bannerH * 0.10);
+  }
+
+  late final double bannerW, bannerH, dragonW, dragonH, top, height;
+}
+
+/// Băng rôn bằng hình; chữ "PHẢ ĐỒ" + tên dòng họ + địa danh uốn cong theo vòm băng rôn.
 class _ImageBanner extends StatelessWidget {
   const _ImageBanner({required this.title, required this.place});
 
@@ -233,74 +264,177 @@ class _ImageBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        final w = c.maxWidth;
-        final h = c.maxHeight;
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: Image.asset(
-                ArtAssets.banner,
-                fit: BoxFit.fill,
-                filterQuality: FilterQuality.high,
-                gaplessPlayback: true,
-              ),
-            ),
-            // Vùng nền đỏ của băng rôn nằm ở giữa, cao khoảng 21%–59% ảnh.
-            Positioned(
-              left: w * 0.22,
-              right: w * 0.22,
-              top: h * 0.215,
-              height: h * 0.385,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'PHẢ ĐỒ',
-                      style: TextStyle(
-                        fontFamily: 'serif',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20,
-                        letterSpacing: 8,
-                        color: AppColors.goldLight,
-                        shadows: _shadow,
-                      ),
-                    ),
-                    Text(
-                      title,
-                      maxLines: 1,
-                      style: const TextStyle(
-                        fontFamily: 'serif',
-                        fontWeight: FontWeight.w900,
-                        fontSize: 46,
-                        height: 1.1,
-                        color: AppColors.gold,
-                        shadows: _shadow,
-                      ),
-                    ),
-                    if (place.trim().isNotEmpty)
-                      Text(
-                        place.trim().toUpperCase(),
-                        maxLines: 1,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          color: AppColors.goldLight,
-                          shadows: _shadow,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    final lines = <_CurvedLine>[
+      const _CurvedLine(
+        text: 'PHẢ ĐỒ',
+        size: 0.058,
+        dy: -0.122,
+        weight: FontWeight.w700,
+        color: AppColors.goldLight,
+        spacing: 0.22,
+      ),
+      _CurvedLine(
+        text: title,
+        size: 0.165,
+        dy: 0.012,
+        weight: FontWeight.w900,
+        color: AppColors.gold,
+        spacing: 0.02,
+      ),
+      if (place.trim().isNotEmpty)
+        _CurvedLine(
+          text: place.trim().toUpperCase(),
+          size: 0.046,
+          dy: 0.128,
+          weight: FontWeight.w700,
+          color: AppColors.goldLight,
+          spacing: 0.06,
+        ),
+    ];
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          ArtAssets.banner,
+          fit: BoxFit.fill,
+          filterQuality: FilterQuality.high,
+          gaplessPlayback: true,
+        ),
+        CustomPaint(painter: _CurvedBannerTextPainter(lines, _shadow)),
+      ],
     );
   }
+}
+
+/// Một dòng chữ trên băng rôn. Các số đều là tỉ lệ theo chiều cao băng rôn.
+class _CurvedLine {
+  const _CurvedLine({
+    required this.text,
+    required this.size,
+    required this.dy,
+    required this.weight,
+    required this.color,
+    required this.spacing,
+  });
+
+  final String text;
+
+  /// Cỡ chữ tối đa (tỉ lệ chiều cao băng rôn); tự nhỏ lại nếu dòng quá dài.
+  final double size;
+
+  /// Lệch dọc so với đường giữa của dải đỏ.
+  final double dy;
+  final FontWeight weight;
+  final Color color;
+
+  /// Khoảng cách chữ (tỉ lệ cỡ chữ).
+  final double spacing;
+}
+
+/// Vẽ từng chữ cái dọc theo vòm của dải đỏ trên ảnh băng rôn.
+/// Đường giữa dải đỏ đo trên ảnh: y/H ≈ 0.398 + 1.75·(x/W − 0.5)².
+class _CurvedBannerTextPainter extends CustomPainter {
+  _CurvedBannerTextPainter(this.lines, this.shadows);
+
+  final List<_CurvedLine> lines;
+  final List<Shadow> shadows;
+
+  static const double _top = 0.398;
+  static const double _k = 1.75;
+
+  /// Phần ngang của dải đỏ dùng được (không đè lên hai trục cuộn).
+  static const double _x0 = 0.25;
+  static const double _x1 = 0.75;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    if (w <= 0 || h <= 0) return;
+
+    double yAt(double x) => h * (_top + _k * math.pow(x / w - 0.5, 2));
+    double slopeAt(double x) => h * _k * 2 * (x / w - 0.5) / w;
+
+    // Bảng độ dài cung tính từ tâm (x = w/2), để đổi "khoảng cách dọc cung" -> x.
+    const n = 400;
+    final xs = List<double>.generate(n + 1, (i) => w * i / n);
+    final arc = List<double>.filled(n + 1, 0);
+    for (var i = 1; i <= n; i++) {
+      final dx = xs[i] - xs[i - 1];
+      final dy = yAt(xs[i]) - yAt(xs[i - 1]);
+      arc[i] = arc[i - 1] + math.sqrt(dx * dx + dy * dy);
+    }
+    final centerArc = arc[n ~/ 2];
+    double xAtArc(double a) {
+      final target = centerArc + a;
+      var lo = 0;
+      var hi = n;
+      while (hi - lo > 1) {
+        final mid = (lo + hi) ~/ 2;
+        if (arc[mid] <= target) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+      final span = arc[hi] - arc[lo];
+      final t = span <= 0 ? 0.0 : (target - arc[lo]) / span;
+      return xs[lo] + (xs[hi] - xs[lo]) * t;
+    }
+
+    final maxArc = (arc[(n * _x1).round()] - arc[(n * _x0).round()]);
+
+    for (final line in lines) {
+      if (line.text.trim().isEmpty) continue;
+      var fontSize = line.size * h;
+      List<TextPainter> build(double fs) => [
+            for (final ch in line.text.characters)
+              TextPainter(
+                text: TextSpan(
+                  text: ch,
+                  style: TextStyle(
+                    fontFamily: 'serif',
+                    fontWeight: line.weight,
+                    fontSize: fs,
+                    letterSpacing: fs * line.spacing,
+                    color: line.color,
+                    shadows: shadows,
+                  ),
+                ),
+                textDirection: TextDirection.ltr,
+              )..layout(),
+          ];
+
+      var glyphs = build(fontSize);
+      var total = glyphs.fold<double>(0, (sum, g) => sum + g.width);
+      if (total > maxArc) {
+        fontSize *= maxArc / total;
+        for (final g in glyphs) {
+          g.dispose();
+        }
+        glyphs = build(fontSize);
+        total = glyphs.fold<double>(0, (sum, g) => sum + g.width);
+      }
+
+      var pos = -total / 2;
+      for (final g in glyphs) {
+        final x = xAtArc(pos + g.width / 2);
+        final y = yAt(x) + line.dy * h;
+        canvas.save();
+        canvas.translate(x, y);
+        canvas.rotate(math.atan(slopeAt(x)));
+        g.paint(canvas, Offset(-g.width / 2, -g.height / 2));
+        canvas.restore();
+        pos += g.width;
+        g.dispose();
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CurvedBannerTextPainter old) =>
+      old.lines.length != lines.length ||
+      [for (final l in old.lines) l.text].join('|') != [for (final l in lines) l.text].join('|');
 }
 
 /// Khung tranh: viền cam, dải vàng có họa tiết vân mây, nền giấy vàng nhạt.

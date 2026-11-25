@@ -113,4 +113,20 @@ void main() {
       );
     });
   });
+
+  group('nét nối cha-con', () {
+    test('đi từ thẻ của người huyết thống đến thẻ của con, không từ giữa hai vợ chồng', () {
+      final data = FamilyData(
+        [_p('cha'), _p('me', Gender.female), _p('con')],
+        [_spouse('cha', 'me'), _parent('cha', 'con')],
+      );
+      final layout = layoutTree(buildDescendantTree(data, 'cha')!);
+      final cfg = layout.config;
+      final cha = layout.units.firstWhere((u) => u.node.person.id == 'cha');
+      final con = layout.units.firstWhere((u) => u.node.person.id == 'con');
+      final edge = layout.childEdges.single;
+      expect(edge.fromX, closeTo(cha.x + cfg.cardW / 2, 0.001));
+      expect(edge.toX, closeTo(con.x + cfg.cardW / 2, 0.001));
+    });
+  });
 }

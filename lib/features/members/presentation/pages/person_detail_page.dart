@@ -7,8 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/widgets/art_assets.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_data.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_painter.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 import 'package:gia_pha/features/members/domain/entities/person.dart';
 import 'package:gia_pha/features/members/presentation/providers/family_providers.dart';
@@ -157,11 +155,7 @@ class _Header extends StatelessWidget {
             width: 130,
             height: 84,
             child: isFemale
-                ? const MotifView(
-                    motif: phoenixMotif,
-                    color: Color(0x40F6DE94),
-                    flipX: true,
-                  )
+                ? const PhoenixImage(faceRight: false, opacity: 0.6)
                 : const DragonImage(faceRight: false, opacity: 0.5),
           ),
           Column(
