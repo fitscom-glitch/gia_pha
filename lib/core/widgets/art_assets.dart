@@ -10,7 +10,7 @@ abstract final class ArtAssets {
 
   /// Tỉ lệ rộng / cao của ảnh.
   static const dragonAspect = 1500 / 704;
-  static const phoenixAspect = 1300 / 939;
+  static const phoenixAspect = 1200 / 1213;
   static const bannerAspect = 1800 / 681;
 
   static String dragon({required bool faceRight}) =>

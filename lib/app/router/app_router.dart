@@ -12,6 +12,7 @@ import 'package:gia_pha/features/heirlooms/presentation/pages/heirlooms_page.dar
 import 'package:gia_pha/features/home/presentation/pages/home_page.dart';
 import 'package:gia_pha/features/honors/presentation/pages/honor_list_page.dart';
 import 'package:gia_pha/features/members/domain/entities/relationship.dart';
+import 'package:gia_pha/features/members/presentation/pages/family_stats_page.dart';
 import 'package:gia_pha/features/members/presentation/pages/person_detail_page.dart';
 import 'package:gia_pha/features/members/presentation/pages/person_form_page.dart';
 import 'package:gia_pha/features/members/presentation/pages/person_list_page.dart';
@@ -74,6 +75,7 @@ final appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(path: '/stats', builder: (_, __) => const FamilyStatsPage()),
     GoRoute(path: '/calendar', builder: (_, __) => const CalendarPage()),
     GoRoute(path: '/honors', builder: (_, __) => const HonorListPage()),
     GoRoute(path: '/heirlooms', builder: (_, __) => const HeirloomsPage()),

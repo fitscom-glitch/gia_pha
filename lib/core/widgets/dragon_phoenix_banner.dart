@@ -20,7 +20,7 @@ class DragonPhoenixBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 186,
+      height: 196,
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -47,7 +47,7 @@ class DragonPhoenixBanner extends StatelessWidget {
                 children: [
                   Expanded(child: _center()),
                   const SizedBox(
-                    height: 74,
+                    height: 84,
                     child: Row(
                       children: [
                         Expanded(

@@ -111,35 +111,46 @@ class _ArticleEditPageState extends ConsumerState<ArticleEditPage> {
       body: PatternBackground(
         child: Form(
           key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+          child: Column(
             children: [
-              TextFormField(
-                controller: _title,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Tiêu đề *',
-                  border: OutlineInputBorder(),
+              // Thanh công cụ cố định trên cùng: luôn bấm được, không phải kéo lên đầu bài.
+              Material(
+                color: AppColors.card,
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  child: Row(
+                    children: [
+                      FilledButton.tonalIcon(
+                        onPressed: _insertImages,
+                        icon: const Icon(Icons.add_photo_alternate_outlined),
+                        label: const Text('Chèn ảnh'),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Ảnh được chèn tại vị trí con trỏ trong bài.',
+                          style: TextStyle(fontSize: 12, color: AppColors.goldDark),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Nhập tiêu đề' : null,
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _insertImages,
-                    icon: const Icon(Icons.add_photo_alternate_outlined),
-                    label: const Text('Chèn ảnh'),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Ảnh được chèn tại vị trí con trỏ trong bài.',
-                      style: TextStyle(fontSize: 12, color: AppColors.goldDark),
+              Expanded(
+                child: ListView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    TextFormField(
+                      controller: _title,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Tiêu đề *',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Nhập tiêu đề' : null,
                     ),
-                  ),
-                ],
-              ),
               if (images.isNotEmpty && dir != null) ...[
                 const SizedBox(height: 10),
                 SizedBox(
@@ -202,6 +213,9 @@ class _ArticleEditPageState extends ConsumerState<ArticleEditPage> {
               FilledButton(
                 onPressed: _saving ? null : _save,
                 child: const Text('Lưu'),
+              ),
+                  ],
+                ),
               ),
             ],
           ),

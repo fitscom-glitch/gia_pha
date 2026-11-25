@@ -11,6 +11,8 @@ có thể gộp nhiều đời vào một hàng (Cài đặt > Gộp nhiều đ�
 
 **Xem phả đồ**: màn hình dọc thì phả đồ tự xoay dọc cho to (nút xoay ở góc dưới phải để đổi lại), phóng to/thu nhỏ không giới hạn bằng hai ngón, nút "vừa khung nhìn" để về vị trí ban đầu.
 
+**Thống kê** (nút biểu đồ ở trang Gia phả): tổng số đời, số người, nam/nữ, còn sống/đã mất, con cháu trực hệ (không tính dâu, rể) chia trai/gái. Nút "Chèn ảnh" trong soạn bài luôn nằm cố định ở trên cùng.
+
 **Khác**: ảnh đại diện thành viên, ghi chú quan hệ dưới tên, danh sách mở rộng xem vợ/chồng và con,
 ngày kỷ niệm tự nhập (dương/âm lịch), bảng lịch âm dương, sao lưu ra file .zip kèm hình ảnh.
 

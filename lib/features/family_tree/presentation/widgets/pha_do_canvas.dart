@@ -105,7 +105,7 @@ class PhaDoCanvas extends StatelessWidget {
               ),
             ),
           // hình rồng chìm: phủ cả nền trong khung, tự co dãn theo kích thước phả đồ
-          if (showWatermark) ..._watermark(size),
+          if (showWatermark) ..._watermark(geom, size),
           for (final l in layers.where((l) => l.kind == PhaDoLayerKind.decor && !l.front))
             _decor(l, size),
           if (showBanner) ..._buildHeader(geom, size, title),
@@ -158,18 +158,21 @@ class PhaDoCanvas extends StatelessWidget {
     );
   }
 
-  /// Rồng chìm: một hoặc vài con rồng (xen kẽ quay trái/phải) lấp đầy phần nền trong khung.
-  List<Widget> _watermark(Size size) {
+  /// Rồng chìm: một hoặc vài con rồng (xen kẽ quay trái/phải) lấp đầy phần nền bên dưới băng rôn,
+  /// bắt đầu từ chỗ băng rôn kết thúc để không bị băng rôn che khuất.
+  List<Widget> _watermark(_HeaderGeom g, Size size) {
     const edge = _band + 8.0;
+    final top = _band + g.height - g.bannerH * 0.08;
     final areaW = size.width - 2 * edge;
-    final areaH = size.height - 2 * edge;
+    final areaH = size.height - top - edge;
+    if (areaH <= 0) return const [];
     final n = math.max(1, (areaW / (areaH * ArtAssets.dragonAspect)).round());
     final w = areaW / n;
     return [
       for (var i = 0; i < n; i++)
         Positioned(
           left: edge + i * w,
-          top: edge,
+          top: top,
           width: w,
           height: areaH,
           child: DragonImage(faceRight: i.isEven, opacity: 0.11),
@@ -264,19 +267,21 @@ class _ImageBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Dải đỏ dày ~0.38 chiều cao băng rôn. Ba dòng xếp cách nhau đủ rộng
+    // (kể cả dấu mũ/dấu hỏi của chữ hoa tiếng Việt) để dòng trên không đè dòng dưới.
     final lines = <_CurvedLine>[
       const _CurvedLine(
         text: 'PHẢ ĐỒ',
-        size: 0.058,
-        dy: -0.122,
+        size: 0.050,
+        dy: -0.138,
         weight: FontWeight.w700,
         color: AppColors.goldLight,
         spacing: 0.22,
       ),
       _CurvedLine(
         text: title,
-        size: 0.165,
-        dy: 0.012,
+        size: 0.108,
+        dy: 0.004,
         weight: FontWeight.w900,
         color: AppColors.gold,
         spacing: 0.02,
@@ -284,11 +289,11 @@ class _ImageBanner extends StatelessWidget {
       if (place.trim().isNotEmpty)
         _CurvedLine(
           text: place.trim().toUpperCase(),
-          size: 0.046,
+          size: 0.040,
           dy: 0.128,
           weight: FontWeight.w700,
           color: AppColors.goldLight,
-          spacing: 0.06,
+          spacing: 0.05,
         ),
     ];
     return Stack(

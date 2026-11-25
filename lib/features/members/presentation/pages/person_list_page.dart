@@ -115,6 +115,11 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
             ],
           ),
           IconButton(
+            icon: const Icon(Icons.bar_chart),
+            tooltip: 'Thống kê',
+            onPressed: () => context.push('/stats'),
+          ),
+          IconButton(
             icon: const Icon(Icons.account_tree),
             tooltip: 'Phả đồ',
             onPressed: () => context.push('/tree'),
@@ -347,7 +352,7 @@ class _EmptyState extends StatelessWidget {
             children: [
               SizedBox(width: 140, height: 66, child: DragonImage(faceRight: true)),
               SizedBox(width: 8),
-              SizedBox(width: 100, height: 72, child: PhoenixImage(faceRight: false)),
+              SizedBox(width: 72, height: 72, child: PhoenixImage(faceRight: false)),
             ],
           ),
           const SizedBox(height: 12),
