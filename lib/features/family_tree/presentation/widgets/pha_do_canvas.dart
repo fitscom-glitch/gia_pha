@@ -3,8 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_data.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_painter.dart';
+import 'package:gia_pha/core/widgets/art_assets.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 import 'package:gia_pha/features/family_tree/domain/entities/pha_do_layer.dart';
 import 'package:gia_pha/features/family_tree/domain/services/generation_rows.dart';
@@ -19,7 +18,7 @@ import 'package:gia_pha/features/members/presentation/widgets/relation_note.dart
 const _orange = Color(0xFFF58220);
 const _navy = Color(0xFF1A237E);
 
-/// Phả đồ dạng tranh treo: khung vàng cam, hai rồng, băng rôn tên dòng họ,
+/// Phả đồ dạng tranh treo: khung vàng cam, hai rồng chầu, băng rôn tên dòng họ,
 /// nhãn "ĐỜI THỨ N" bên trái và cây gia phả ở giữa.
 class PhaDoCanvas extends StatelessWidget {
   const PhaDoCanvas({
@@ -56,12 +55,15 @@ class PhaDoCanvas extends StatelessWidget {
   final bool showWatermark;
 
   static const double _band = 58;
-  static const double _header = 220;
+  static const double _header = 290;
   static const double _labelW = 130;
   static const double _sideW = 24;
   static const double _footer = 80;
   static const double _minTreeH = 440;
-  static const double _minWidth = 980;
+  static const double _minWidth = 1400;
+  static const double _bannerW = 680;
+  static const double _dragonW = 360;
+  static const double _dragonOverlap = 70;
 
   static Size sizeOf(TreeLayoutResult layout) {
     final w = layout.width + 2 * (_band + _sideW) + _labelW;
@@ -99,23 +101,16 @@ class PhaDoCanvas extends StatelessWidget {
             ),
           // hình rồng mờ làm nền
           if (showWatermark)
-          Positioned(
-            left: contentLeft + innerW * 0.08,
-            top: treeY,
-            width: innerW * 0.84,
-            height: layout.height < _minTreeH ? _minTreeH : layout.height,
-            child: const MotifView(motif: dragonMotif, color: Color(0x22E0A800)),
-          ),
+            Positioned(
+              left: contentLeft + innerW * 0.08,
+              top: treeY,
+              width: innerW * 0.84,
+              height: layout.height < _minTreeH ? _minTreeH : layout.height,
+              child: const DragonImage(opacity: 0.09),
+            ),
           for (final l in layers.where((l) => l.kind == PhaDoLayerKind.decor && !l.front))
             _decor(l, size),
-          if (showBanner)
-          Positioned(
-            left: (size.width - 620) / 2,
-            top: _band + 28,
-            width: 620,
-            height: 170,
-            child: _ScrollBanner(title: title, place: place),
-          ),
+          if (showBanner) ..._buildHeader(size, title),
           // nhãn các đời
           for (final r in layout.rows)
             Positioned(
@@ -165,6 +160,38 @@ class PhaDoCanvas extends StatelessWidget {
     );
   }
 
+  /// Băng rôn ở giữa, hai rồng chầu hai bên (đầu quay vào băng rôn).
+  List<Widget> _buildHeader(Size size, String title) {
+    const bannerH = _bannerW / ArtAssets.bannerAspect;
+    const dragonH = _dragonW / ArtAssets.dragonAspect;
+    const top = _band + 14;
+    final cx = size.width / 2;
+    final dragonTop = top + (bannerH - dragonH) / 2 + 12;
+    return [
+      Positioned(
+        left: cx - _bannerW / 2 - _dragonW + _dragonOverlap,
+        top: dragonTop,
+        width: _dragonW,
+        height: dragonH,
+        child: const DragonImage(faceRight: true),
+      ),
+      Positioned(
+        left: cx + _bannerW / 2 - _dragonOverlap,
+        top: dragonTop,
+        width: _dragonW,
+        height: dragonH,
+        child: const DragonImage(faceRight: false),
+      ),
+      Positioned(
+        left: cx - _bannerW / 2,
+        top: top,
+        width: _bannerW,
+        height: bannerH,
+        child: _ImageBanner(title: title, place: place),
+      ),
+    ];
+  }
+
   /// Khung chữ nhật (chưa xoay) của một lớp họa tiết trên khung phả đồ [canvas].
   static Rect layerRect(PhaDoLayer l, Size canvas) {
     final w = l.w * canvas.width;
@@ -193,94 +220,85 @@ class PhaDoCanvas extends StatelessWidget {
   }
 }
 
-/// Băng rôn đỏ có hai trục cuộn hai đầu: "PHẢ ĐỒ" + tên dòng họ + địa danh.
-class _ScrollBanner extends StatelessWidget {
-  const _ScrollBanner({required this.title, required this.place});
+/// Băng rôn bằng hình: chữ "PHẢ ĐỒ" + tên dòng họ + địa danh nằm trên nền đỏ ở giữa.
+class _ImageBanner extends StatelessWidget {
+  const _ImageBanner({required this.title, required this.place});
 
   final String title;
   final String place;
 
-  Widget _roll() => Container(
-        width: 64,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF8BC34A), Color(0xFFDCEDC8), Color(0xFF8BC34A)],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF1E88E5), width: 3),
-        ),
-        child: Column(
-          children: [
-            Container(height: 16, color: const Color(0xFF1E88E5)),
-            const Spacer(),
-            Container(height: 16, color: const Color(0xFF1E88E5)),
-          ],
-        ),
-      );
+  static const _shadow = [
+    Shadow(color: Color(0xAA000000), blurRadius: 3, offset: Offset(0, 1.5)),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          left: 44,
-          right: 44,
-          top: 8,
-          bottom: 8,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE41E26),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.gold, width: 4),
-              boxShadow: const [
-                BoxShadow(color: Color(0x55000000), blurRadius: 6, offset: Offset(0, 3)),
-              ],
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth;
+        final h = c.maxHeight;
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                ArtAssets.banner,
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.high,
+                gaplessPlayback: true,
+              ),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'PHẢ ĐỒ',
-                  style: TextStyle(
-                    fontFamily: 'serif',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 24,
-                    letterSpacing: 8,
-                    color: AppColors.goldLight,
-                  ),
-                ),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontFamily: 'serif',
-                      fontWeight: FontWeight.w900,
-                      fontSize: 48,
-                      color: AppColors.gold,
-                    ),
-                  ),
-                ),
-                if (place.trim().isNotEmpty)
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      place.trim().toUpperCase(),
-                      style: const TextStyle(
+            // Vùng nền đỏ của băng rôn nằm ở giữa, cao khoảng 21%–59% ảnh.
+            Positioned(
+              left: w * 0.22,
+              right: w * 0.22,
+              top: h * 0.215,
+              height: h * 0.385,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'PHẢ ĐỒ',
+                      style: TextStyle(
+                        fontFamily: 'serif',
                         fontWeight: FontWeight.w700,
-                        fontSize: 13,
+                        fontSize: 20,
+                        letterSpacing: 8,
                         color: AppColors.goldLight,
+                        shadows: _shadow,
                       ),
                     ),
-                  ),
-              ],
+                    Text(
+                      title,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontFamily: 'serif',
+                        fontWeight: FontWeight.w900,
+                        fontSize: 46,
+                        height: 1.1,
+                        color: AppColors.gold,
+                        shadows: _shadow,
+                      ),
+                    ),
+                    if (place.trim().isNotEmpty)
+                      Text(
+                        place.trim().toUpperCase(),
+                        maxLines: 1,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: AppColors.goldLight,
+                          shadows: _shadow,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
-        Positioned(left: 0, top: 0, bottom: 0, child: _roll()),
-        Positioned(right: 0, top: 0, bottom: 0, child: _roll()),
-      ],
+          ],
+        );
+      },
     );
   }
 }

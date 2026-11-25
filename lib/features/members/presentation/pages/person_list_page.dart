@@ -9,9 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
+import 'package:gia_pha/core/widgets/art_assets.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_data.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_painter.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 import 'package:gia_pha/features/members/domain/entities/family_data.dart';
 import 'package:gia_pha/features/members/domain/entities/person.dart';
@@ -346,21 +345,9 @@ class _EmptyState extends StatelessWidget {
           const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: 110,
-                height: 64,
-                child: MotifView(motif: dragonMotif, color: Color(0x889C7A12)),
-              ),
+              SizedBox(width: 140, height: 66, child: DragonImage(faceRight: true)),
               SizedBox(width: 8),
-              SizedBox(
-                width: 110,
-                height: 70,
-                child: MotifView(
-                  motif: phoenixMotif,
-                  color: Color(0x889C7A12),
-                  flipX: true,
-                ),
-              ),
+              SizedBox(width: 140, height: 66, child: DragonImage(faceRight: false)),
             ],
           ),
           const SizedBox(height: 12),

@@ -31,7 +31,11 @@ class TreePage extends ConsumerStatefulWidget {
 class _TreePageState extends ConsumerState<TreePage> {
   String? _rootId;
   final _canvasKey = GlobalKey();
+  final _viewerKey = GlobalKey<_ZoomableCanvasState>();
   PhaDoModel? _model;
+
+  /// null = tự động (màn hình dọc thì xoay phả đồ dọc cho to, dễ đọc).
+  bool? _rotated;
 
   @override
   void initState() {
@@ -197,24 +201,65 @@ class _TreePageState extends ConsumerState<TreePage> {
             if (model == null) {
               return const Center(child: Text('Chưa có thành viên để hiển thị'));
             }
-            return _ZoomableCanvas(
-              size: model.size,
-              child: RepaintBoundary(
-                key: _canvasKey,
-                child: PhaDoCanvas(
-                  layout: model.layout,
-                  data: d,
-                  generations: model.generations,
-                  rows: model.rows,
-                  clanName: settings.clanName,
-                  place: settings.clanPlace,
-                  onOpenPerson: (id) => context.push('/person/$id'),
-                  layers: layers,
-                  showFrame: settings.phadoFrame,
-                  showBanner: settings.phadoBanner,
-                  showWatermark: settings.phadoWatermark,
+            final size = model.size;
+            final portrait = MediaQuery.orientationOf(context) == Orientation.portrait;
+            // Phả đồ nằm ngang (rộng hơn cao) thì xoay dọc để lấp đầy màn hình điện thoại.
+            final rotated = _rotated ?? (portrait && size.width > size.height);
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: _ZoomableCanvas(
+                    key: _viewerKey,
+                    size: size,
+                    rotated: rotated,
+                    child: RotatedBox(
+                      quarterTurns: rotated ? 1 : 0,
+                      child: RepaintBoundary(
+                        key: _canvasKey,
+                        child: PhaDoCanvas(
+                          layout: model.layout,
+                          data: d,
+                          generations: model.generations,
+                          rows: model.rows,
+                          clanName: settings.clanName,
+                          place: settings.clanPlace,
+                          onOpenPerson: (id) => context.push('/person/$id'),
+                          layers: layers,
+                          showFrame: settings.phadoFrame,
+                          showBanner: settings.phadoBanner,
+                          showWatermark: settings.phadoWatermark,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FloatingActionButton.small(
+                        heroTag: null,
+                        tooltip: rotated ? 'Xoay ngang phả đồ' : 'Xoay dọc phả đồ',
+                        backgroundColor: AppColors.card,
+                        foregroundColor: AppColors.redDark,
+                        onPressed: () => setState(() => _rotated = !rotated),
+                        child: const Icon(Icons.screen_rotation),
+                      ),
+                      const SizedBox(height: 8),
+                      FloatingActionButton.small(
+                        heroTag: null,
+                        tooltip: 'Vừa khung nhìn',
+                        backgroundColor: AppColors.card,
+                        foregroundColor: AppColors.redDark,
+                        onPressed: () => _viewerKey.currentState?.fit(),
+                        child: const Icon(Icons.fit_screen),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             );
           },
         ),
@@ -297,11 +342,19 @@ class _ExportDialogState extends State<_ExportDialog> {
   }
 }
 
-/// Phóng to/thu nhỏ bằng hai ngón; lúc đầu tự thu nhỏ vừa chiều rộng màn hình.
+/// Phóng to/thu nhỏ không giới hạn bằng hai ngón (hoặc con lăn chuột), kéo thả tự do.
+/// Lúc đầu (và mỗi khi đổi hướng xoay) tự vừa chiều rộng khung nhìn.
+/// [size] là kích thước phả đồ chưa xoay; [rotated] = true khi [child] đã xoay 90°.
 class _ZoomableCanvas extends StatefulWidget {
-  const _ZoomableCanvas({required this.size, required this.child});
+  const _ZoomableCanvas({
+    super.key,
+    required this.size,
+    required this.rotated,
+    required this.child,
+  });
 
   final Size size;
+  final bool rotated;
   final Widget child;
 
   @override
@@ -310,7 +363,9 @@ class _ZoomableCanvas extends StatefulWidget {
 
 class _ZoomableCanvasState extends State<_ZoomableCanvas> {
   final _controller = TransformationController();
-  bool _fitted = false;
+  Size _viewport = Size.zero;
+  bool? _fittedRotated;
+  Size? _fittedSize;
 
   @override
   void dispose() {
@@ -318,23 +373,47 @@ class _ZoomableCanvasState extends State<_ZoomableCanvas> {
     super.dispose();
   }
 
+  Size get _display =>
+      widget.rotated ? Size(widget.size.height, widget.size.width) : widget.size;
+
+  /// Thu phóng cho vừa chiều rộng khung nhìn, căn giữa.
+  void fit() {
+    final v = _viewport;
+    final d = _display;
+    if (v.isEmpty || d.isEmpty) return;
+    final s = (v.width / d.width).clamp(0.001, 8.0).toDouble();
+    final dx = (v.width - d.width * s) / 2;
+    final dy = math.max(0.0, (v.height - d.height * s) / 2);
+    // Ma trận (cột chính): tỉ lệ s rồi tịnh tiến (dx, dy).
+    _controller.value = Matrix4(
+      s, 0, 0, 0, //
+      0, s, 0, 0, //
+      0, 0, 1, 0, //
+      dx, dy, 0, 1,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (!_fitted && constraints.maxWidth.isFinite) {
-          _fitted = true;
-          final scale = (constraints.maxWidth / widget.size.width).clamp(0.05, 1.0).toDouble();
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _controller.value = Matrix4.diagonal3Values(scale, scale, 1);
-          });
+        if (constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
+          _viewport = constraints.biggest;
+          if (_fittedRotated != widget.rotated || _fittedSize != widget.size) {
+            _fittedRotated = widget.rotated;
+            _fittedSize = widget.size;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) fit();
+            });
+          }
         }
         return InteractiveViewer(
           transformationController: _controller,
           constrained: false,
-          minScale: 0.05,
-          maxScale: 3,
-          boundaryMargin: const EdgeInsets.all(400),
+          // Zoom vào không giới hạn; thu nhỏ xuống rất nhỏ; kéo ra ngoài biên tự do.
+          minScale: 0.001,
+          maxScale: double.infinity,
+          boundaryMargin: const EdgeInsets.all(double.infinity),
           child: widget.child,
         );
       },

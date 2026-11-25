@@ -7,7 +7,7 @@ import 'package:gia_pha/core/widgets/dragon_phoenix_banner.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 import 'package:gia_pha/features/home/domain/services/anniversary_service.dart';
 
-/// Băng rôn lướt ngang: rồng phụng + vài câu ca dao về cội nguồn.
+/// Băng rôn lướt ngang: hai rồng + vài câu ca dao về cội nguồn.
 class HomeBannerCarousel extends StatefulWidget {
   const HomeBannerCarousel({super.key, required this.memberCount});
 
@@ -40,7 +40,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 148,
+          height: 200,
           child: PageView(
             controller: _controller,
             onPageChanged: (i) => setState(() => _page = i),

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
+import 'package:gia_pha/core/widgets/art_assets.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
 import 'package:gia_pha/core/widgets/ornaments/motif_data.dart';
 import 'package:gia_pha/core/widgets/ornaments/motif_painter.dart';
@@ -139,7 +140,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final motif = person.gender == Gender.female ? phoenixMotif : dragonMotif;
+    final isFemale = person.gender == Gender.female;
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -155,11 +156,13 @@ class _Header extends StatelessWidget {
             top: 12,
             width: 130,
             height: 84,
-            child: MotifView(
-              motif: motif,
-              color: const Color(0x40F6DE94),
-              flipX: true,
-            ),
+            child: isFemale
+                ? const MotifView(
+                    motif: phoenixMotif,
+                    color: Color(0x40F6DE94),
+                    flipX: true,
+                  )
+                : const DragonImage(faceRight: false, opacity: 0.5),
           ),
           Column(
             children: [

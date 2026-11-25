@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_data.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_painter.dart';
+import 'package:gia_pha/core/widgets/art_assets.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 
-/// Biểu ngữ "rồng phụng chầu": rồng bên trái, phụng bên phải.
+/// Biểu ngữ "lưỡng long chầu": hai rồng quay mặt vào nhau ở phía dưới.
 /// Giữa là [title] + [subtitle], hoặc một câu [quote] nếu có.
 class DragonPhoenixBanner extends StatelessWidget {
   const DragonPhoenixBanner({
@@ -21,7 +20,7 @@ class DragonPhoenixBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 124,
+      height: 176,
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -44,19 +43,21 @@ class DragonPhoenixBanner extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 20),
-              child: Row(
+              child: Column(
                 children: [
-                  const SizedBox(
-                    width: 100,
-                    child: MotifView(motif: dragonMotif, color: AppColors.goldLight),
-                  ),
                   Expanded(child: _center()),
                   const SizedBox(
-                    width: 100,
-                    child: MotifView(
-                      motif: phoenixMotif,
-                      color: AppColors.goldLight,
-                      flipX: true,
+                    height: 66,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: DragonImage(faceRight: true, alignment: Alignment.centerRight),
+                        ),
+                        SizedBox(width: 4),
+                        Expanded(
+                          child: DragonImage(faceRight: false, alignment: Alignment.centerLeft),
+                        ),
+                      ],
                     ),
                   ),
                 ],

@@ -5,9 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
+import 'package:gia_pha/core/widgets/art_assets.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_data.dart';
-import 'package:gia_pha/core/widgets/ornaments/motif_painter.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 import 'package:gia_pha/features/heirlooms/domain/entities/heirloom.dart';
 import 'package:gia_pha/features/heirlooms/presentation/providers/heirloom_providers.dart';
@@ -127,7 +126,7 @@ class HeirloomImage extends StatelessWidget {
     return Container(
       color: AppColors.paperDark,
       padding: const EdgeInsets.all(16),
-      child: const MotifView(motif: dragonMotif, color: Color(0x889C7A12)),
+      child: const DragonImage(opacity: 0.7),
     );
   }
 }
