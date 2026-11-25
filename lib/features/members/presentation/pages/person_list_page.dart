@@ -1,3 +1,10 @@
+import 'dart:typed_data';
+
+import 'package:intl/intl.dart';
+import 'package:gia_pha/core/utils/file_saver.dart';
+import 'package:gia_pha/features/members/presentation/export/member_export_rows.dart';
+import 'package:gia_pha/features/members/presentation/export/member_list_pdf.dart';
+import 'package:gia_pha/features/members/presentation/export/members_xlsx.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +34,45 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
 
   /// Các thành viên đang được mở rộng để xem người có quan hệ trực tiếp.
   final Set<String> _expanded = {};
+
+  void _toast(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Xuất toàn bộ danh sách thành viên ra Excel hoặc PDF, cho chọn nơi lưu.
+  Future<void> _exportList({required bool pdf}) async {
+    final data = ref.read(familyProvider).valueOrNull;
+    if (data == null || data.persons.isEmpty) {
+      _toast('Chưa có thành viên để xuất');
+      return;
+    }
+    _toast('Đang tạo file...');
+    try {
+      final rows = buildMemberExportRows(data);
+      final stamp = DateFormat('yyyyMMdd').format(DateTime.now());
+      final Uint8List bytes;
+      final String ext;
+      if (pdf) {
+        bytes = await buildMemberListPdf(rows, title: 'DANH SÁCH THÀNH VIÊN');
+        ext = 'pdf';
+      } else {
+        bytes = buildMemberXlsx(rows);
+        ext = 'xlsx';
+      }
+      final saved = await saveFileWithPicker(
+        fileName: 'danh-sach-thanh-vien-$stamp.$ext',
+        bytes: bytes,
+        extensions: [ext],
+        dialogTitle: 'Chọn nơi lưu danh sách',
+      );
+      _toast(saved ? 'Đã lưu danh sách (${rows.length} thành viên)' : 'Đã hủy, chưa lưu file');
+    } catch (e) {
+      _toast('Không xuất được: $e');
+    }
+  }
 
   /// Theo tên gọi (từ cuối), rồi họ tên đầy đủ.
   static int _byName(Person a, Person b) {
@@ -58,6 +104,15 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
                 child: Text('Theo đời (vợ chồng liền kề)'),
               ),
               PopupMenuItem(value: _SortMode.name, child: Text('Tên A–Z')),
+            ],
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: 'Xuất danh sách',
+            onSelected: (v) => _exportList(pdf: v == 'pdf'),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'xlsx', child: Text('Xuất Excel (.xlsx)')),
+              PopupMenuItem(value: 'pdf', child: Text('Xuất PDF')),
             ],
           ),
           IconButton(

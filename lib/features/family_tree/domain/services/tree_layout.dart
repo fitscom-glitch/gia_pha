@@ -170,7 +170,16 @@ TreeLayoutResult layoutTree(
   TreeNode root, {
   LayoutConfig config = const LayoutConfig(),
   int Function(Person person)? rowOf,
+}) =>
+    layoutTreeForest([root], config: config, rowOf: rowOf);
+
+/// Như [layoutTree] nhưng cho nhiều gốc đặt cạnh nhau (khi người gốc bị ẩn do gộp đời).
+TreeLayoutResult layoutTreeForest(
+  List<TreeNode> roots, {
+  LayoutConfig config = const LayoutConfig(),
+  int Function(Person person)? rowOf,
 }) {
+  assert(roots.isNotEmpty);
   final depthRow = <String, int>{};
   if (rowOf == null) {
     void walk(TreeNode n, int d) {
@@ -180,18 +189,24 @@ TreeLayoutResult layoutTree(
       }
     }
 
-    walk(root, 0);
+    for (final r in roots) {
+      walk(r, 0);
+    }
   }
   int rowFn(Person p) => rowOf != null ? rowOf(p) : (depthRow[p.id] ?? 0);
 
   final l = _Layouter(config, rowFn);
-  l.baseRow = rowFn(root.person);
-  final rootSeg = l.build(root);
-  l.place(rootSeg, config.margin);
+  l.baseRow = roots.map((r) => rowFn(r.person)).reduce(math.min);
+  final segments = [for (final r in roots) l.build(r)];
+  var left = config.margin;
+  for (final s in segments) {
+    l.place(s, left);
+    left += l.segW(s) + config.hGap;
+  }
 
   final ys = <int, double>{for (final u in l.units) u.row: u.y};
   final rows = [for (final r in ys.keys.toList()..sort()) LayoutRow(r, ys[r]!)];
-  final width = l.segW(rootSeg) + 2 * config.margin;
+  final width = (left - config.hGap) + config.margin;
   final height = (l.maxOffset + 1) * config.cardH +
       l.maxOffset * config.vGap +
       2 * config.margin;

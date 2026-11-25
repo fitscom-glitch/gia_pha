@@ -55,6 +55,7 @@ class FamilyNotifier extends AsyncNotifier<FamilyData> {
     String? anchorId,
     AddAs? addAs,
     String? newPhotoSourcePath,
+    bool removePhoto = false,
   }) async {
     var toSave = person;
     if (newPhotoSourcePath != null) {
@@ -62,6 +63,9 @@ class FamilyNotifier extends AsyncNotifier<FamilyData> {
       final stored = await store.saveCopy(newPhotoSourcePath, person.id);
       await store.delete(person.photoPath);
       toSave = person.withPhoto(stored);
+    } else if (removePhoto) {
+      await ref.read(avatarStoreProvider).delete(state.valueOrNull?.byId(person.id)?.photoPath);
+      toSave = person.withPhoto(null);
     }
     await ref.read(saveMemberProvider)(toSave, anchorId: anchorId, addAs: addAs);
     await _reload();

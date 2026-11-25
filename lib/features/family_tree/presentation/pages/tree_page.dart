@@ -1,14 +1,20 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
+import 'package:gia_pha/core/utils/file_saver.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
-import 'package:gia_pha/features/family_tree/domain/services/generation_rows.dart';
-import 'package:gia_pha/features/family_tree/domain/services/tree_builder.dart';
-import 'package:gia_pha/features/family_tree/domain/services/tree_layout.dart';
+import 'package:gia_pha/features/family_tree/domain/entities/pha_do_layer.dart';
+import 'package:gia_pha/features/family_tree/presentation/export/pha_do_export.dart';
+import 'package:gia_pha/features/family_tree/presentation/providers/pha_do_providers.dart';
+import 'package:gia_pha/features/family_tree/presentation/widgets/generation_groups_dialog.dart';
 import 'package:gia_pha/features/family_tree/presentation/widgets/pha_do_canvas.dart';
-import 'package:gia_pha/features/members/domain/entities/family_data.dart';
-import 'package:gia_pha/features/members/domain/entities/person.dart';
+import 'package:gia_pha/features/family_tree/presentation/widgets/pha_do_model.dart';
 import 'package:gia_pha/features/members/presentation/providers/family_providers.dart';
 import 'package:gia_pha/features/settings/domain/entities/app_settings.dart';
 import 'package:gia_pha/features/settings/presentation/providers/settings_providers.dart';
@@ -24,6 +30,8 @@ class TreePage extends ConsumerStatefulWidget {
 
 class _TreePageState extends ConsumerState<TreePage> {
   String? _rootId;
+  final _canvasKey = GlobalKey();
+  PhaDoModel? _model;
 
   @override
   void initState() {
@@ -31,62 +39,99 @@ class _TreePageState extends ConsumerState<TreePage> {
     _rootId = widget.initialRootId;
   }
 
-  /// Gốc mặc định: người không có cha mẹ, ưu tiên người có con và nhập trước.
-  String? _defaultRoot(FamilyData d) {
-    if (d.persons.isEmpty) return null;
-    final roots = d.persons.where((p) => d.parentsOf(p.id).isEmpty).toList();
-    final pool = [...(roots.isEmpty ? d.persons : roots)];
-    pool.sort((a, b) {
-      final ha = d.childrenOf(a.id).isNotEmpty;
-      final hb = d.childrenOf(b.id).isNotEmpty;
-      if (ha != hb) return ha ? -1 : 1;
-      return a.seq.compareTo(b.seq);
-    });
-    return pool.first.id;
+  void _toast(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _editGroups() async {
+    final model = _model;
     final settings = ref.read(settingsProvider).valueOrNull ?? const AppSettings();
-    final controller = TextEditingController(text: settings.generationGroups);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Gộp đời vào một hàng'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Vd: 2-5; 8-9',
-            helperText: 'Các đời trong cùng nhóm nằm chung một hàng. Để trống = mỗi đời một hàng.',
-            helperMaxLines: 3,
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Lưu')),
-        ],
-      ),
+    final result = await showGenerationGroupsDialog(
+      context,
+      initial: settings.generationGroups,
+      maxGeneration: model?.data.generationCount ?? 0,
     );
-    if (ok == true) {
-      await ref
-          .read(settingsProvider.notifier)
-          .save(settings.copyWith(generationGroups: controller.text.trim()));
+    if (result != null) {
+      await ref.read(settingsProvider.notifier).save(settings.copyWith(generationGroups: result));
     }
+  }
+
+  /// Chụp phả đồ thành ảnh PNG độ phân giải cao hoặc PDF rồi cho chọn nơi lưu.
+  Future<void> _export() async {
+    final model = _model;
+    if (model == null) return;
+    final opts = await showDialog<_ExportOptions>(
+      context: context,
+      builder: (_) => const _ExportDialog(),
+    );
+    if (opts == null || !mounted) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    var progressOpen = true;
+    String message;
+    try {
+      final boundary = _canvasKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) throw StateError('Phả đồ chưa sẵn sàng');
+      final size = model.size;
+      final maxPixels = opts.pdf ? 12e6 : 36e6;
+      final maxSide = opts.pdf ? 6000.0 : 9000.0;
+      final wanted = switch (opts.quality) {
+        1 => 1.0,
+        2 => 2.0,
+        3 => 3.0,
+        _ => 100.0,
+      };
+      final ratio = math.min(
+        wanted,
+        math.min(
+          maxSide / math.max(size.width, size.height),
+          math.sqrt(maxPixels / (size.width * size.height)),
+        ),
+      );
+      final image = await boundary.toImage(pixelRatio: ratio);
+      final px = '${image.width}×${image.height} px';
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+      if (data == null) throw StateError('Không tạo được ảnh');
+      var bytes = data.buffer.asUint8List();
+      if (opts.pdf) bytes = await pngToPdf(bytes, size);
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        progressOpen = false;
+      }
+      final stamp = DateFormat('yyyyMMdd-HHmm').format(DateTime.now());
+      final ext = opts.pdf ? 'pdf' : 'png';
+      final saved = await saveFileWithPicker(
+        fileName: 'pha-do-$stamp.$ext',
+        bytes: bytes,
+        extensions: [ext],
+        dialogTitle: 'Chọn nơi lưu phả đồ',
+      );
+      message = saved ? 'Đã lưu phả đồ ($px)' : 'Đã hủy, chưa lưu file';
+    } catch (e) {
+      message = 'Không xuất được: $e';
+    } finally {
+      if (progressOpen && mounted) Navigator.of(context, rootNavigator: true).pop();
+    }
+    _toast(message);
   }
 
   @override
   Widget build(BuildContext context) {
     final family = ref.watch(familyProvider);
     final settings = ref.watch(settingsProvider).valueOrNull ?? const AppSettings();
+    final layers = ref.watch(phaDoLayersProvider).valueOrNull ?? const <PhaDoLayer>[];
     return Scaffold(
       appBar: GoldAppBar(
         title: 'Phả đồ',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.view_agenda_outlined),
-            tooltip: 'Gộp đời vào một hàng',
-            onPressed: _editGroups,
-          ),
           family.maybeWhen(
             data: (d) => PopupMenuButton<String>(
               icon: const Icon(Icons.person_search),
@@ -99,6 +144,46 @@ class _TreePageState extends ConsumerState<TreePage> {
             ),
             orElse: () => const SizedBox.shrink(),
           ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Tùy chọn phả đồ',
+            onSelected: (v) {
+              switch (v) {
+                case 'decor':
+                  context.push('/tree/decor${_rootId == null ? '' : '?root=$_rootId'}');
+                case 'groups':
+                  _editGroups();
+                case 'export':
+                  _export();
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'decor',
+                child: ListTile(
+                  leading: Icon(Icons.palette_outlined),
+                  title: Text('Trang trí phả đồ'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'groups',
+                child: ListTile(
+                  leading: Icon(Icons.view_agenda_outlined),
+                  title: Text('Gộp đời vào một hàng'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'export',
+                child: ListTile(
+                  leading: Icon(Icons.ios_share),
+                  title: Text('Xuất ảnh / PDF'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       body: ColoredBox(
@@ -107,37 +192,107 @@ class _TreePageState extends ConsumerState<TreePage> {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Lỗi: $e')),
           data: (d) {
-            final rootId = _rootId ?? _defaultRoot(d);
-            final tree = rootId == null ? null : buildDescendantTree(d, rootId);
-            if (tree == null) {
+            final model = PhaDoModel.build(d, settings, _rootId);
+            _model = model;
+            if (model == null) {
               return const Center(child: Text('Chưa có thành viên để hiển thị'));
             }
-            final gens = d.generations();
-            final rows = buildGenerationRows(
-              d.generationCount,
-              parseGenerationGroups(settings.generationGroups),
-            );
-            final rowOfGen = {
-              for (var r = 0; r < rows.length; r++)
-                for (final g in rows[r]) g: r,
-            };
-            int rowOf(Person p) => rowOfGen[(gens[p.id] ?? 0) + 1] ?? 0;
-            final layout = layoutTree(tree, rowOf: rowOf);
             return _ZoomableCanvas(
-              size: PhaDoCanvas.sizeOf(layout),
-              child: PhaDoCanvas(
-                layout: layout,
-                data: d,
-                generations: gens,
-                rows: rows,
-                clanName: settings.clanName,
-                place: settings.clanPlace,
-                onOpenPerson: (id) => context.push('/person/$id'),
+              size: model.size,
+              child: RepaintBoundary(
+                key: _canvasKey,
+                child: PhaDoCanvas(
+                  layout: model.layout,
+                  data: d,
+                  generations: model.generations,
+                  rows: model.rows,
+                  clanName: settings.clanName,
+                  place: settings.clanPlace,
+                  onOpenPerson: (id) => context.push('/person/$id'),
+                  layers: layers,
+                  showFrame: settings.phadoFrame,
+                  showBanner: settings.phadoBanner,
+                  showWatermark: settings.phadoWatermark,
+                ),
               ),
             );
           },
         ),
       ),
+    );
+  }
+}
+
+class _ExportOptions {
+  const _ExportOptions({required this.pdf, required this.quality});
+
+  final bool pdf;
+
+  /// 1, 2, 3 = hệ số phóng; 0 = tối đa.
+  final int quality;
+}
+
+class _ExportDialog extends StatefulWidget {
+  const _ExportDialog();
+
+  @override
+  State<_ExportDialog> createState() => _ExportDialogState();
+}
+
+class _ExportDialogState extends State<_ExportDialog> {
+  bool _pdf = false;
+  int _quality = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Xuất phả đồ'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('Ảnh PNG'), icon: Icon(Icons.image)),
+                ButtonSegment(value: true, label: Text('PDF'), icon: Icon(Icons.picture_as_pdf)),
+              ],
+              selected: {_pdf},
+              onSelectionChanged: (s) => setState(() => _pdf = s.first),
+            ),
+            const SizedBox(height: 12),
+            const Text('Độ phân giải', style: TextStyle(fontWeight: FontWeight.w600)),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final (value, label) in const [
+                  (1, 'Chuẩn x1'),
+                  (2, 'Cao x2'),
+                  (3, 'Rất cao x3'),
+                  (0, 'Tối đa'),
+                ])
+                  ChoiceChip(
+                    label: Text(label),
+                    selected: _quality == value,
+                    onSelected: (_) => setState(() => _quality = value),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Phả đồ lớn sẽ tự giảm độ phân giải để không làm tràn bộ nhớ.',
+              style: TextStyle(fontSize: 12, color: AppColors.goldDark),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _ExportOptions(pdf: _pdf, quality: _quality)),
+          child: const Text('Xuất'),
+        ),
+      ],
     );
   }
 }

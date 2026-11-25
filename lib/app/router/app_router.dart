@@ -6,6 +6,7 @@ import 'package:gia_pha/features/articles/presentation/pages/article_list_page.d
 import 'package:gia_pha/features/articles/presentation/pages/article_read_page.dart';
 import 'package:gia_pha/features/contacts/presentation/pages/contacts_page.dart';
 import 'package:gia_pha/features/events/presentation/pages/calendar_page.dart';
+import 'package:gia_pha/features/family_tree/presentation/pages/pha_do_decor_page.dart';
 import 'package:gia_pha/features/family_tree/presentation/pages/tree_page.dart';
 import 'package:gia_pha/features/heirlooms/presentation/pages/heirlooms_page.dart';
 import 'package:gia_pha/features/home/presentation/pages/home_page.dart';
@@ -49,6 +50,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/tree',
       builder: (_, s) => TreePage(initialRootId: s.uri.queryParameters['root']),
+    ),
+    GoRoute(
+      path: '/tree/decor',
+      builder: (_, s) => PhaDoDecorPage(rootId: s.uri.queryParameters['root']),
     ),
     GoRoute(
       path: '/person/:id',

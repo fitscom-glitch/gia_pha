@@ -7,7 +7,11 @@ import 'package:gia_pha/core/database/app_database.dart';
 import 'package:gia_pha/core/storage/image_store.dart';
 import 'package:gia_pha/features/settings/domain/entities/app_settings.dart';
 import 'package:gia_pha/features/settings/domain/repositories/settings_repository.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+
+/// Dấu chèn ảnh trong bài viết, dạng [[img:tên-file]].
+final _articleImage = RegExp(r'\[\[img:([^\]]+)\]\]');
 
 class SettingsRepositoryImpl implements SettingsRepository {
   SettingsRepositoryImpl(this._db);
@@ -24,6 +28,9 @@ class SettingsRepositoryImpl implements SettingsRepository {
       clanIntro: m['clan_intro'] ?? '',
       clanPlace: m['clan_place'] ?? '',
       generationGroups: m['generation_groups'] ?? '',
+      phadoFrame: m['phado_frame'] != '0',
+      phadoBanner: m['phado_banner'] != '0',
+      phadoWatermark: m['phado_watermark'] != '0',
     );
   }
 
@@ -36,6 +43,9 @@ class SettingsRepositoryImpl implements SettingsRepository {
       'clan_intro': s.clanIntro,
       'clan_place': s.clanPlace,
       'generation_groups': s.generationGroups,
+      'phado_frame': s.phadoFrame ? '1' : '0',
+      'phado_banner': s.phadoBanner ? '1' : '0',
+      'phado_watermark': s.phadoWatermark ? '1' : '0',
     }.entries) {
       batch.insert(
         'settings',
@@ -62,14 +72,26 @@ class BackupRepositoryImpl implements BackupRepository {
     'articles',
     'heirlooms',
     'events',
+    'phado_layers',
     'settings',
   ];
 
   /// Bảng -> cột chứa đường dẫn ảnh.
-  static const _imageColumn = {'persons': 'photo_path', 'heirlooms': 'image_path'};
+  static const _imageColumn = {
+    'persons': 'photo_path',
+    'heirlooms': 'image_path',
+    'phado_layers': 'path',
+  };
 
   /// Bảng -> thư mục lưu ảnh trong ứng dụng.
-  static const _imageFolder = {'persons': 'avatars', 'heirlooms': 'heirlooms'};
+  static const _imageFolder = {
+    'persons': 'avatars',
+    'heirlooms': 'heirlooms',
+    'phado_layers': 'phado',
+  };
+
+  /// Bảng mà dòng không có ảnh thì bỏ qua (ảnh là bắt buộc).
+  static const _requiredImage = {'phado_layers'};
 
   @override
   Future<Uint8List> exportArchive() async {
@@ -90,12 +112,28 @@ class BackupRepositoryImpl implements BackupRepository {
             archive.addFile(ArchiveFile(name, bytes.length, bytes));
             row[col] = name;
           } else {
+            if (_requiredImage.contains(t)) continue;
             row[col] = null;
           }
         }
         out.add(row);
       }
       tables[t] = out;
+    }
+    // Ảnh chèn trong bài viết.
+    final docs = await getApplicationDocumentsDirectory();
+    final articleImages = <String>{};
+    for (final a in tables['articles'] as List<Map<String, Object?>>) {
+      for (final m in _articleImage.allMatches('${a['body'] ?? ''}')) {
+        articleImages.add(m.group(1)!);
+      }
+    }
+    for (final name in articleImages) {
+      final f = File('${docs.path}/articles/$name');
+      if (await f.exists()) {
+        final b = await f.readAsBytes();
+        archive.addFile(ArchiveFile('article_images/$name', b.length, b));
+      }
     }
     final json = utf8.encode(jsonEncode({
       'app': 'gia_pha',
@@ -127,12 +165,15 @@ class BackupRepositoryImpl implements BackupRepository {
     }
     ArchiveFile? dataFile;
     final images = <String, ArchiveFile>{};
+    final articleImageFiles = <ArchiveFile>[];
     for (final f in archive.files) {
       if (!f.isFile) continue;
       if (f.name == 'data.json') {
         dataFile = f;
       } else if (f.name.startsWith('images/')) {
         images[f.name] = f;
+      } else if (f.name.startsWith('article_images/')) {
+        articleImageFiles.add(f);
       }
     }
     if (dataFile == null) {
@@ -176,6 +217,8 @@ class BackupRepositoryImpl implements BackupRepository {
                     ext: ImageStore.extensionOf(name),
                   );
           }
+          final imgCol = _imageColumn[t];
+          if (imgCol != null && row[imgCol] == null && _requiredImage.contains(t)) continue;
           rows.add(row);
         }
       }
@@ -192,6 +235,12 @@ class BackupRepositoryImpl implements BackupRepository {
         }
       }
     });
+
+    // Khôi phục ảnh trong bài viết.
+    const articleStore = ImageStore(folder: 'articles');
+    for (final f in articleImageFiles) {
+      await articleStore.saveNamed(f.content as List<int>, f.name.split('/').last);
+    }
 
     for (final p in oldPaths) {
       try {

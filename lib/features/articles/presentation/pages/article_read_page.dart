@@ -6,6 +6,7 @@ import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 import 'package:gia_pha/features/articles/domain/entities/article.dart';
+import 'package:gia_pha/features/articles/presentation/pages/article_body_view.dart';
 import 'package:gia_pha/features/articles/presentation/pages/article_kind_ui.dart';
 import 'package:gia_pha/features/articles/presentation/providers/article_providers.dart';
 
@@ -66,10 +67,7 @@ class ArticleReadPage extends ConsumerWidget {
             const SizedBox(height: 10),
             const MeanderStrip(height: 10),
             const SizedBox(height: 16),
-            SelectableText(
-              a.body,
-              style: const TextStyle(fontSize: 16.5, height: 1.65, color: AppColors.ink),
-            ),
+            ArticleBodyView(body: a.body),
           ],
         ),
       ),

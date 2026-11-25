@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
@@ -66,7 +67,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Future<void> _saveInfo() async {
     await ref.read(settingsProvider.notifier).save(
-          AppSettings(
+          (ref.read(settingsProvider).valueOrNull ?? const AppSettings()).copyWith(
             clanName: _name.text.trim(),
             clanPlace: _place.text.trim(),
             clanIntro: _intro.text.trim(),
@@ -197,11 +198,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 controller: _groups,
                 decoration: const InputDecoration(
                   labelText: 'Gộp nhiều đời vào một hàng',
-                  hintText: 'Vd: 2-5; 8-9',
-                  helperText: 'Đời 2 đến 5 nằm chung một hàng, đời 8 và 9 nằm chung một hàng.',
-                  helperMaxLines: 2,
+                  hintText: 'Vd: 2-5:3; 8-9',
+                  helperText: '2-5:3 = đời 2 đến 5 chung một hàng, chỉ hiển thị đời 3. '
+                      '8-9 = gộp đời 8 và 9, hiển thị cả hai. Cũng chỉnh nhanh được trong trang Phả đồ.',
+                  helperMaxLines: 4,
                   border: OutlineInputBorder(),
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OrnateCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(Icons.palette_outlined, color: AppColors.red),
+                title: const Text('Trang trí phả đồ'),
+                subtitle: const Text('Hình nền, họa tiết, băng rôn, biểu ngữ từ file PNG/SVG...'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/tree/decor'),
               ),
             ),
             const SizedBox(height: 12),
@@ -236,7 +249,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const _SectionLabel('Giới thiệu'),
             const OrnateCard(
               child: Text(
-                'Gia phả · phiên bản 0.2.0\nDữ liệu lưu trên máy này. '
+                'Gia phả · phiên bản 0.3.0\nTác giả dự án: Trung Nguyễn\nDữ liệu lưu trên máy này. '
                 'Hãy sao lưu định kỳ để không mất dữ liệu khi đổi máy.',
                 style: TextStyle(color: AppColors.ink, height: 1.4),
               ),

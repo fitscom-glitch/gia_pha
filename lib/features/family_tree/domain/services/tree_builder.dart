@@ -28,3 +28,19 @@ TreeNode? buildDescendantTree(FamilyData data, String rootId) {
 
   return build(root);
 }
+
+/// Bỏ các người không hiển thị ([visible] = false). Con cháu của họ được nối lên
+/// người hiển thị gần nhất ở phía trên. Trả về danh sách gốc (có thể nhiều hơn một
+/// nếu chính người gốc bị ẩn).
+List<TreeNode> collapseTree(TreeNode root, bool Function(Person person) visible) {
+  List<TreeNode> walk(TreeNode n) {
+    final kids = <TreeNode>[];
+    for (final c in n.children) {
+      kids.addAll(walk(c));
+    }
+    if (visible(n.person)) return [TreeNode(n.person, n.spouses, kids)];
+    return kids;
+  }
+
+  return walk(root);
+}

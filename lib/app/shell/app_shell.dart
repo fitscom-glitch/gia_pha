@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
 
 /// Khung chứa thanh điều hướng dưới (đỏ thẫm) cho 4 tab chính.
+/// Vuốt/bấm "quay lại" ở các tab khác sẽ về Trang chủ trước; ở Trang chủ mới thoát ứng dụng.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
 
@@ -17,31 +18,37 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: shell,
-      bottomNavigationBar: Container(
-        color: AppColors.redDeep,
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 62,
-            child: Row(
-              children: [
-                for (final (i, item) in _items.indexed)
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => shell.goBranch(
-                        i,
-                        initialLocation: i == shell.currentIndex,
-                      ),
-                      child: _NavItem(
-                        icon: i == shell.currentIndex ? item.$2 : item.$1,
-                        label: item.$3,
-                        selected: i == shell.currentIndex,
+    return PopScope(
+      canPop: shell.currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) shell.goBranch(0);
+      },
+      child: Scaffold(
+        body: shell,
+        bottomNavigationBar: Container(
+          color: AppColors.redDeep,
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 62,
+              child: Row(
+                children: [
+                  for (final (i, item) in _items.indexed)
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => shell.goBranch(
+                          i,
+                          initialLocation: i == shell.currentIndex,
+                        ),
+                        child: _NavItem(
+                          icon: i == shell.currentIndex ? item.$2 : item.$1,
+                          label: item.$3,
+                          selected: i == shell.currentIndex,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

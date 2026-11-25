@@ -12,6 +12,11 @@ có thể gộp nhiều đời vào một hàng (Cài đặt > Gộp nhiều đ�
 **Khác**: ảnh đại diện thành viên, ghi chú quan hệ dưới tên, danh sách mở rộng xem vợ/chồng và con,
 ngày kỷ niệm tự nhập (dương/âm lịch), bảng lịch âm dương, sao lưu ra file .zip kèm hình ảnh.
 
+**Mới (0.3.0)**: phả đồ có thể gộp nhiều đời vào một hàng và chọn một đời đại diện (cú pháp `2-5:3`),
+trang trí phả đồ bằng hình ngoài (PNG nền trong suốt, JPG, WebP, SVG), xuất phả đồ ra PNG/PDF độ phân giải cao,
+xuất danh sách thành viên ra Excel (.xlsx) và PDF, bài viết có thể chèn ảnh, lịch đánh dấu ngày lễ (viền đỏ) và
+ngày kỷ niệm (viền vàng đậm), xóa được ảnh đại diện. Tác giả dự án: Trung Nguyễn.
+
 **Thứ tự anh em**: các con luôn xếp theo "con thứ mấy" nếu đã đặt (ô trong form thành viên hoặc nút ⇅ ở mục Con
 của trang chi tiết), nếu chưa đặt thì theo thứ tự nhập vào. Không bao giờ xếp theo bảng chữ cái.
 

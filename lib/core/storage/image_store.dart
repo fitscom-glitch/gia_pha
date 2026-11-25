@@ -41,4 +41,17 @@ class ImageStore {
     final f = File(path);
     if (await f.exists()) await f.delete();
   }
+
+  Future<String> directoryPath() async => (await _dir()).path;
+
+  Future<void> saveNamed(List<int> bytes, String name) async {
+    final dir = await _dir();
+    await File('${dir.path}/$name').writeAsBytes(bytes);
+  }
+
+  Future<void> deleteNamed(String name) async {
+    final dir = await _dir();
+    final f = File('${dir.path}/$name');
+    if (await f.exists()) await f.delete();
+  }
 }

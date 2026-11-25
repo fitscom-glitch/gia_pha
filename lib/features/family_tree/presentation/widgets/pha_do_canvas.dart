@@ -1,13 +1,16 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/widgets/ornaments/motif_data.dart';
 import 'package:gia_pha/core/widgets/ornaments/motif_painter.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
+import 'package:gia_pha/features/family_tree/domain/entities/pha_do_layer.dart';
 import 'package:gia_pha/features/family_tree/domain/services/generation_rows.dart';
 import 'package:gia_pha/features/family_tree/domain/services/tree_layout.dart';
 import 'package:gia_pha/features/family_tree/presentation/widgets/generation_colors.dart';
+import 'package:gia_pha/features/family_tree/presentation/widgets/layer_image.dart';
 import 'package:gia_pha/features/members/domain/entities/family_data.dart';
 import 'package:gia_pha/features/members/domain/entities/person.dart';
 import 'package:gia_pha/features/members/presentation/widgets/person_avatar.dart';
@@ -28,6 +31,10 @@ class PhaDoCanvas extends StatelessWidget {
     required this.clanName,
     required this.place,
     required this.onOpenPerson,
+    this.layers = const [],
+    this.showFrame = true,
+    this.showBanner = true,
+    this.showWatermark = true,
   });
 
   final TreeLayoutResult layout;
@@ -41,6 +48,12 @@ class PhaDoCanvas extends StatelessWidget {
   final String clanName;
   final String place;
   final void Function(String personId) onOpenPerson;
+
+  /// Hình nền / họa tiết do người dùng thêm (đã sắp theo thứ tự lớp).
+  final List<PhaDoLayer> layers;
+  final bool showFrame;
+  final bool showBanner;
+  final bool showWatermark;
 
   static const double _band = 58;
   static const double _header = 220;
@@ -72,8 +85,20 @@ class PhaDoCanvas extends StatelessWidget {
       height: size.height,
       child: Stack(
         children: [
-          Positioned.fill(child: CustomPaint(painter: _FramePainter(_band))),
+          if (showFrame)
+            Positioned.fill(child: CustomPaint(painter: _FramePainter(_band)))
+          else
+            const Positioned.fill(child: ColoredBox(color: Color(0xFFFFFDE7))),
+          // hình nền do người dùng thêm
+          for (final l in layers.where((l) => l.kind == PhaDoLayerKind.background))
+            Positioned.fill(
+              child: Opacity(
+                opacity: l.opacity,
+                child: LayerImage(path: l.path, fit: BoxFit.cover),
+              ),
+            ),
           // hình rồng mờ làm nền
+          if (showWatermark)
           Positioned(
             left: contentLeft + innerW * 0.08,
             top: treeY,
@@ -81,6 +106,9 @@ class PhaDoCanvas extends StatelessWidget {
             height: layout.height < _minTreeH ? _minTreeH : layout.height,
             child: const MotifView(motif: dragonMotif, color: Color(0x22E0A800)),
           ),
+          for (final l in layers.where((l) => l.kind == PhaDoLayerKind.decor && !l.front))
+            _decor(l, size),
+          if (showBanner)
           Positioned(
             left: (size.width - 620) / 2,
             top: _band + 28,
@@ -130,7 +158,36 @@ class PhaDoCanvas extends StatelessWidget {
                   onTap: () => onOpenPerson(p.id),
                 ),
               ),
+          for (final l in layers.where((l) => l.kind == PhaDoLayerKind.decor && l.front))
+            _decor(l, size),
         ],
+      ),
+    );
+  }
+
+  /// Khung chữ nhật (chưa xoay) của một lớp họa tiết trên khung phả đồ [canvas].
+  static Rect layerRect(PhaDoLayer l, Size canvas) {
+    final w = l.w * canvas.width;
+    return Rect.fromCenter(
+      center: Offset(l.cx * canvas.width, l.cy * canvas.height),
+      width: w,
+      height: w * l.aspect,
+    );
+  }
+
+  Widget _decor(PhaDoLayer l, Size canvas) {
+    final r = layerRect(l, canvas);
+    return Positioned(
+      left: r.left,
+      top: r.top,
+      width: r.width,
+      height: r.height,
+      child: Opacity(
+        opacity: l.opacity,
+        child: Transform.rotate(
+          angle: l.rotation * math.pi / 180,
+          child: LayerImage(path: l.path),
+        ),
       ),
     );
   }

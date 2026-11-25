@@ -7,7 +7,7 @@ class AppDatabase {
   AppDatabase._();
   static final AppDatabase instance = AppDatabase._();
 
-  static const _version = 3;
+  static const _version = 4;
 
   /// Key = phiên bản đích.
   static final Map<int, Future<void> Function(Database db)> _migrations = {
@@ -24,6 +24,9 @@ class AppDatabase {
     },
     3: (db) async {
       await db.execute('ALTER TABLE persons ADD COLUMN photo_path TEXT');
+      await _createExtraTables(db);
+    },
+    4: (db) async {
       await _createExtraTables(db);
     },
   };
@@ -120,6 +123,20 @@ class AppDatabase {
         is_lunar INTEGER NOT NULL DEFAULT 0,
         repeat_yearly INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL
+      )''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS phado_layers (
+        id TEXT PRIMARY KEY,
+        path TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        cx REAL NOT NULL,
+        cy REAL NOT NULL,
+        w REAL NOT NULL,
+        aspect REAL NOT NULL,
+        rotation REAL NOT NULL DEFAULT 0,
+        opacity REAL NOT NULL DEFAULT 1,
+        front INTEGER NOT NULL DEFAULT 0,
+        z INTEGER NOT NULL DEFAULT 0
       )''');
   }
 

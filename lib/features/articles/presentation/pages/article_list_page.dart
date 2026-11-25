@@ -6,6 +6,7 @@ import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/widgets/gold_app_bar.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 import 'package:gia_pha/features/articles/domain/entities/article.dart';
+import 'package:gia_pha/features/articles/domain/entities/article_content.dart';
 import 'package:gia_pha/features/articles/presentation/pages/article_kind_ui.dart';
 import 'package:gia_pha/features/articles/presentation/providers/article_providers.dart';
 
@@ -72,7 +73,7 @@ class ArticleListPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        a.body.replaceAll(RegExp(r'\s+'), ' '),
+                        stripArticleImageTokens(a.body).replaceAll(RegExp(r'\s+'), ' ').trim(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: AppColors.ink, height: 1.35),

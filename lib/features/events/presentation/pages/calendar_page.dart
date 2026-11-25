@@ -169,7 +169,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            _legend(),
+            const SizedBox(height: 10),
             Text(
               '${_weekdayNames[sel.weekday - 1]}, ${sel.day}/${sel.month}/${sel.year}',
               style: const TextStyle(
@@ -244,6 +245,33 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     );
   }
 
+  static const _anniversaryRing = Color(0xFFB8860B);
+
+  Widget _ring(Color c) => Container(
+        width: 16,
+        height: 16,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: c, width: 2.2),
+        ),
+      );
+
+  Widget _legend() => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _ring(AppColors.red),
+            const SizedBox(width: 6),
+            const Text('Ngày lễ', style: TextStyle(fontSize: 12.5)),
+            const SizedBox(width: 20),
+            _ring(_anniversaryRing),
+            const SizedBox(width: 6),
+            const Text('Ngày kỷ niệm', style: TextStyle(fontSize: 12.5)),
+          ],
+        ),
+      );
+
   Widget _buildCell(DateTime day, List<Anniversary> items, DateTime today) {
     final lunar = LunarCalendar.fromSolar(day);
     final isToday = day.year == today.year && day.month == today.month && day.day == today.day;
@@ -252,54 +280,76 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         day.day == _selected.day;
     final isSunday = day.weekday == 7;
     final lunarText = lunar.day == 1 ? '${lunar.day}/${lunar.month}' : '${lunar.day}';
-    final types = {for (final a in items) a.type}.toList();
+    final hasFestival = items.any((a) => a.type == AnniversaryType.festival);
+    final hasAnniversary = items.any((a) => a.type != AnniversaryType.festival);
+
+    final number = Text(
+      '${day.day}',
+      style: TextStyle(
+        fontWeight: FontWeight.w700,
+        fontSize: 16,
+        color: isToday ? AppColors.redDark : (isSunday ? AppColors.red : AppColors.ink),
+      ),
+    );
+    // Ngày lễ: viền tròn đỏ. Ngày kỷ niệm: viền tròn vàng đậm. Có cả hai: hai vòng lồng nhau.
+    Widget circle;
+    if (hasFestival && hasAnniversary) {
+      circle = Container(
+        width: 36,
+        height: 36,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isToday ? AppColors.goldLight : null,
+          border: Border.all(color: AppColors.red, width: 2.2),
+        ),
+        child: Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: _anniversaryRing, width: 2.2),
+          ),
+          child: number,
+        ),
+      );
+    } else {
+      circle = Container(
+        width: 36,
+        height: 36,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isToday ? AppColors.goldLight : null,
+          border: hasFestival
+              ? Border.all(color: AppColors.red, width: 2.2)
+              : hasAnniversary
+                  ? Border.all(color: _anniversaryRing, width: 2.2)
+                  : null,
+        ),
+        child: number,
+      );
+    }
+
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       onTap: () => setState(() => _selected = day),
       child: Container(
         margin: const EdgeInsets.all(1.5),
         decoration: BoxDecoration(
-          color: isSel ? AppColors.red : null,
-          borderRadius: BorderRadius.circular(8),
-          border: isToday ? Border.all(color: AppColors.gold, width: 2) : null,
+          color: isSel ? AppColors.goldLight.withAlpha(110) : null,
+          borderRadius: BorderRadius.circular(10),
+          border: isSel ? Border.all(color: AppColors.gold) : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              '${day.day}',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-                color: isSel
-                    ? AppColors.goldLight
-                    : (isSunday ? AppColors.red : AppColors.ink),
-              ),
-            ),
+            circle,
+            const SizedBox(height: 1),
             Text(
               lunarText,
-              style: TextStyle(
-                fontSize: 10.5,
-                color: isSel ? AppColors.goldLight : AppColors.goldDark,
-              ),
-            ),
-            SizedBox(
-              height: 8,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (final t in types.take(3))
-                    Container(
-                      width: 5,
-                      height: 5,
-                      margin: const EdgeInsets.symmetric(horizontal: 1),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isSel ? AppColors.goldLight : _dot(t),
-                      ),
-                    ),
-                ],
-              ),
+              style: const TextStyle(fontSize: 10.5, color: AppColors.goldDark),
             ),
           ],
         ),

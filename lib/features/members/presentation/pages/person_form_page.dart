@@ -39,6 +39,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
   DateTime? _death;
   bool _saving = false;
   String? _pickedPhoto;
+  bool _removePhoto = false;
   Person? _existing;
 
   @override
@@ -84,42 +85,60 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       maxWidth: 1024,
       imageQuality: 85,
     );
-    if (x != null) setState(() => _pickedPhoto = x.path);
+    if (x != null) {
+      setState(() {
+        _pickedPhoto = x.path;
+        _removePhoto = false;
+      });
+    }
   }
 
   Widget _photoPicker() {
-    final existing = _existing?.photoPath;
+    final existing = _removePhoto ? null : _existing?.photoPath;
     ImageProvider? image;
     if (_pickedPhoto != null) {
       image = FileImage(File(_pickedPhoto!));
     } else if (existing != null && File(existing).existsSync()) {
       image = FileImage(File(existing));
     }
-    return Center(
-      child: GestureDetector(
-        onTap: _pickPhoto,
-        child: Stack(
-          children: [
-            CircleAvatar(
-              radius: 48,
-              backgroundColor: AppColors.paperDark,
-              backgroundImage: image,
-              child: image == null
-                  ? const Icon(Icons.person, size: 48, color: AppColors.goldDark)
-                  : null,
+    return Column(
+      children: [
+        Center(
+          child: GestureDetector(
+            onTap: _pickPhoto,
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: AppColors.paperDark,
+                  backgroundImage: image,
+                  child: image == null
+                      ? const Icon(Icons.person, size: 48, color: AppColors.goldDark)
+                      : null,
+                ),
+                const Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppColors.red,
+                    child: Icon(Icons.camera_alt, size: 18, color: AppColors.goldLight),
+                  ),
+                ),
+              ],
             ),
-            const Positioned(
-              right: 0,
-              bottom: 0,
-              child: CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.red,
-                child: Icon(Icons.camera_alt, size: 18, color: AppColors.goldLight),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        if (image != null)
+          TextButton.icon(
+            onPressed: () => setState(() {
+              _pickedPhoto = null;
+              _removePhoto = true;
+            }),
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Xóa ảnh đại diện'),
+          ),
+      ],
     );
   }
 
@@ -141,7 +160,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       address: _existing?.address,
       email: _existing?.email,
       seq: _existing?.seq ?? 0,
-      photoPath: _existing?.photoPath,
+      photoPath: _removePhoto ? null : _existing?.photoPath,
       birthOrder: int.tryParse(_order.text.trim()),
     );
     await ref.read(familyProvider.notifier).saveMember(
@@ -149,6 +168,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
           anchorId: widget.anchorId,
           addAs: widget.addAs,
           newPhotoSourcePath: _pickedPhoto,
+          removePhoto: _removePhoto && _pickedPhoto == null,
         );
     if (mounted) context.pop();
   }
