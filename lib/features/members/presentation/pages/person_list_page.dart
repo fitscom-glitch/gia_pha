@@ -350,9 +350,9 @@ class _EmptyState extends StatelessWidget {
           const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(width: 140, height: 66, child: DragonImage(faceRight: true)),
+              SizedBox(width: 72, height: 110, child: PhoenixArt()),
               SizedBox(width: 8),
-              SizedBox(width: 72, height: 72, child: PhoenixImage(faceRight: false)),
+              SizedBox(width: 48, height: 110, child: DragonArt()),
             ],
           ),
           const SizedBox(height: 12),

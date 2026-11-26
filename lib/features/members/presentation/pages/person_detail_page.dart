@@ -150,13 +150,13 @@ class _Header extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            right: 6,
-            top: 12,
-            width: 130,
-            height: 84,
+            right: 14,
+            top: 8,
+            width: 64,
+            height: 92,
             child: isFemale
-                ? const PhoenixImage(faceRight: false, opacity: 0.6)
-                : const DragonImage(faceRight: false, opacity: 0.5),
+                ? const PhoenixArt(color: AppColors.goldLight, opacity: 0.6)
+                : const DragonArt(color: AppColors.goldLight, opacity: 0.6),
           ),
           Column(
             children: [

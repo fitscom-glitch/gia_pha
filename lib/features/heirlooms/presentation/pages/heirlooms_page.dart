@@ -126,7 +126,7 @@ class HeirloomImage extends StatelessWidget {
     return Container(
       color: AppColors.paperDark,
       padding: const EdgeInsets.all(16),
-      child: const DragonImage(opacity: 0.7),
+      child: const DragonArt(color: Color(0xFF9C7A12), opacity: 0.8),
     );
   }
 }

@@ -3,7 +3,7 @@ import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/widgets/art_assets.dart';
 import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 
-/// Biểu ngữ "rồng phụng chầu": rồng bên trái, phụng bên phải, quay mặt vào nhau ở phía dưới.
+/// Biểu ngữ "rồng phụng chầu": phụng bên trái, rồng bên phải, quay mặt vào nhau.
 /// Giữa là [title] + [subtitle], hoặc một câu [quote] nếu có.
 class DragonPhoenixBanner extends StatelessWidget {
   const DragonPhoenixBanner({
@@ -20,7 +20,7 @@ class DragonPhoenixBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 196,
+      height: 176,
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -42,23 +42,17 @@ class DragonPhoenixBanner extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 20),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 20),
+              child: Row(
                 children: [
+                  const SizedBox(
+                    width: 84,
+                    child: PhoenixArt(color: AppColors.goldLight, opacity: 0.95),
+                  ),
                   Expanded(child: _center()),
                   const SizedBox(
-                    height: 84,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: DragonImage(faceRight: true, alignment: Alignment.centerRight),
-                        ),
-                        SizedBox(width: 4),
-                        Expanded(
-                          child: PhoenixImage(faceRight: false, alignment: Alignment.centerLeft),
-                        ),
-                      ],
-                    ),
+                    width: 52,
+                    child: DragonArt(color: AppColors.goldLight, opacity: 0.95),
                   ),
                 ],
               ),

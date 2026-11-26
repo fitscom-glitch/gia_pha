@@ -4,7 +4,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:gia_pha/core/theme/app_colors.dart';
 import 'package:gia_pha/core/widgets/art_assets.dart';
-import 'package:gia_pha/core/widgets/ornaments/ornaments.dart';
 import 'package:gia_pha/features/family_tree/domain/entities/pha_do_layer.dart';
 import 'package:gia_pha/features/family_tree/domain/services/generation_rows.dart';
 import 'package:gia_pha/features/family_tree/domain/services/tree_layout.dart';
@@ -15,10 +14,9 @@ import 'package:gia_pha/features/members/domain/entities/person.dart';
 import 'package:gia_pha/features/members/presentation/widgets/person_avatar.dart';
 import 'package:gia_pha/features/members/presentation/widgets/relation_note.dart';
 
-const _orange = Color(0xFFF58220);
 const _navy = Color(0xFF1A237E);
 
-/// Phả đồ dạng tranh treo: khung vàng cam, hai rồng chầu, băng rôn tên dòng họ,
+/// Phả đồ dạng tranh treo: khung hồi văn cam, hai rồng chầu, cuốn thư tên dòng họ,
 /// nhãn "ĐỜI THỨ N" bên trái và cây gia phả ở giữa.
 class PhaDoCanvas extends StatelessWidget {
   const PhaDoCanvas({
@@ -63,7 +61,8 @@ class PhaDoCanvas extends StatelessWidget {
 
   /// Hình học phần đầu (băng rôn + hai rồng): mọi kích thước tỉ lệ theo chiều rộng phả đồ,
   /// nên phả đồ càng lớn thì băng rôn và rồng càng to.
-  static _HeaderGeom _geom(double canvasWidth) => _HeaderGeom(canvasWidth, _band + _sideW, _band);
+  static _HeaderGeom _geom(double canvasWidth) =>
+      _HeaderGeom(canvasWidth, _band + _sideW + 30, _band);
 
   static Size sizeOf(TreeLayoutResult layout) {
     final w0 = layout.width + 2 * (_band + _sideW) + _labelW;
@@ -93,7 +92,7 @@ class PhaDoCanvas extends StatelessWidget {
       child: Stack(
         children: [
           if (showFrame)
-            Positioned.fill(child: CustomPaint(painter: _FramePainter(_band)))
+            const Positioned.fill(child: _Frame())
           else
             const Positioned.fill(child: ColoredBox(color: Color(0xFFFFFDE7))),
           // hình nền do người dùng thêm
@@ -166,7 +165,7 @@ class PhaDoCanvas extends StatelessWidget {
     final areaW = size.width - 2 * edge;
     final areaH = size.height - top - edge;
     if (areaH <= 0) return const [];
-    final n = math.max(1, (areaW / (areaH * ArtAssets.dragonAspect)).round());
+    final n = math.max(1, (areaW / (areaH * ArtAssets.phaDoDragonAspect)).round());
     final w = areaW / n;
     return [
       for (var i = 0; i < n; i++)
@@ -175,7 +174,7 @@ class PhaDoCanvas extends StatelessWidget {
           top: top,
           width: w,
           height: areaH,
-          child: DragonImage(faceRight: i.isEven, opacity: 0.11),
+          child: PhaDoDragon(faceRight: i.isEven, opacity: 0.12),
         ),
     ];
   }
@@ -190,14 +189,14 @@ class PhaDoCanvas extends StatelessWidget {
         top: dragonTop,
         width: g.dragonW,
         height: g.dragonH,
-        child: const DragonImage(faceRight: true),
+        child: const PhaDoDragon(faceRight: true),
       ),
       Positioned(
         left: cx + g.bannerW / 2,
         top: dragonTop,
         width: g.dragonW,
         height: g.dragonH,
-        child: const DragonImage(faceRight: false),
+        child: const PhaDoDragon(faceRight: false),
       ),
       Positioned(
         left: cx - g.bannerW / 2,
@@ -242,10 +241,10 @@ class _HeaderGeom {
   _HeaderGeom(double canvasWidth, double sideInset, double band) {
     final inner = canvasWidth - 2 * sideInset;
     final span = math.min(inner, 3600.0);
-    bannerW = span * 0.50;
-    bannerH = bannerW / ArtAssets.bannerAspect;
-    dragonW = span * 0.25;
-    dragonH = dragonW / ArtAssets.dragonAspect;
+    bannerW = span * 0.44;
+    bannerH = bannerW / ArtAssets.scrollAspect;
+    dragonW = span * 0.28;
+    dragonH = dragonW / ArtAssets.phaDoDragonAspect;
     top = band + math.max(14.0, bannerH * 0.06);
     // chiều cao từ mép trên canvas đến chỗ bắt đầu cây (tính cả hai lề khung `band`)
     height = (top - band) + bannerH + math.max(24.0, bannerH * 0.10);
@@ -254,7 +253,7 @@ class _HeaderGeom {
   late final double bannerW, bannerH, dragonW, dragonH, top, height;
 }
 
-/// Băng rôn bằng hình; chữ "PHẢ ĐỒ" + tên dòng họ + địa danh uốn cong theo vòm băng rôn.
+/// Cuốn thư (từ Gia_pha_3.cdr); chữ "PHẢ ĐỒ" + tên dòng họ + địa danh uốn cong theo vòm băng rôn.
 class _ImageBanner extends StatelessWidget {
   const _ImageBanner({required this.title, required this.place});
 
@@ -267,21 +266,21 @@ class _ImageBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Dải đỏ dày ~0.38 chiều cao băng rôn. Ba dòng xếp cách nhau đủ rộng
+    // Dải đỏ của cuốn thư dày ~0.44 chiều cao. Ba dòng cách nhau đủ rộng
     // (kể cả dấu mũ/dấu hỏi của chữ hoa tiếng Việt) để dòng trên không đè dòng dưới.
     final lines = <_CurvedLine>[
       const _CurvedLine(
         text: 'PHẢ ĐỒ',
-        size: 0.050,
-        dy: -0.138,
+        size: 0.055,
+        dy: -0.145,
         weight: FontWeight.w700,
         color: AppColors.goldLight,
         spacing: 0.22,
       ),
       _CurvedLine(
         text: title,
-        size: 0.108,
-        dy: 0.004,
+        size: 0.125,
+        dy: 0.006,
         weight: FontWeight.w900,
         color: AppColors.gold,
         spacing: 0.02,
@@ -289,8 +288,8 @@ class _ImageBanner extends StatelessWidget {
       if (place.trim().isNotEmpty)
         _CurvedLine(
           text: place.trim().toUpperCase(),
-          size: 0.040,
-          dy: 0.128,
+          size: 0.043,
+          dy: 0.150,
           weight: FontWeight.w700,
           color: AppColors.goldLight,
           spacing: 0.05,
@@ -300,7 +299,7 @@ class _ImageBanner extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         Image.asset(
-          ArtAssets.banner,
+          ArtAssets.scroll,
           fit: BoxFit.fill,
           filterQuality: FilterQuality.high,
           gaplessPlayback: true,
@@ -337,19 +336,19 @@ class _CurvedLine {
 }
 
 /// Vẽ từng chữ cái dọc theo vòm của dải đỏ trên ảnh băng rôn.
-/// Đường giữa dải đỏ đo trên ảnh: y/H ≈ 0.398 + 1.75·(x/W − 0.5)².
+/// Đường giữa dải đỏ đo trên ảnh cuốn thư: y/H ≈ 0.349 + 1.75·(x/W − 0.5)².
 class _CurvedBannerTextPainter extends CustomPainter {
   _CurvedBannerTextPainter(this.lines, this.shadows);
 
   final List<_CurvedLine> lines;
   final List<Shadow> shadows;
 
-  static const double _top = 0.398;
+  static const double _top = 0.349;
   static const double _k = 1.75;
 
   /// Phần ngang của dải đỏ dùng được (không đè lên hai trục cuộn).
-  static const double _x0 = 0.25;
-  static const double _x1 = 0.75;
+  static const double _x0 = 0.27;
+  static const double _x1 = 0.73;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -442,60 +441,129 @@ class _CurvedBannerTextPainter extends CustomPainter {
       [for (final l in old.lines) l.text].join('|') != [for (final l in lines) l.text].join('|');
 }
 
-/// Khung tranh: viền cam, dải vàng có họa tiết vân mây, nền giấy vàng nhạt.
-class _FramePainter extends CustomPainter {
-  const _FramePainter(this.band);
+/// Khung bao bằng họa tiết chữ "hồi văn" cam (từ Gia_pha_3.cdr): bốn góc + dải viền
+/// lặp lại trên/dưới + hai thanh dọc hai bên, nền giấy vàng nhạt.
+class _Frame extends StatelessWidget {
+  const _Frame();
 
-  final double band;
+  /// Cách mép canvas và độ dày dải viền (đơn vị logic).
+  static const double _inset = 10;
+  static const double _thickness = 32;
+  static const _barColor = Color(0xFFF07C00);
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = _orange);
-    final outer = Rect.fromLTWH(12, 12, size.width - 24, size.height - 24);
-    final inner = Rect.fromLTWH(band, band, size.width - 2 * band, size.height - 2 * band);
+  // Ảnh gốc: dải viền cao 249px; góc 1196×1200px; thanh dọc rộng 63px, cách mép trái 38px,
+  // bắt đầu cách mép trên 1309px.
+  static const double _s = _thickness / 249;
+  static const double _cornerW = 1196 * _s;
+  static const double _cornerH = 1200 * _s;
+  static const double _tileW = 484 * _s;
+  static const double _barW = 63 * _s;
+  static const double _barX = 38 * _s;
+  static const double _barStart = 1309 * _s;
 
-    canvas.drawPath(
-      Path.combine(
-        PathOperation.difference,
-        Path()..addRect(outer),
-        Path()..addRect(inner),
+  Widget _strip(double length, int n) {
+    final w = length / n;
+    return ClipRect(
+      child: Stack(
+        children: [
+          for (var i = 0; i < n; i++)
+            Positioned(
+              left: i * w,
+              top: 0,
+              // chồng 1px lên ô kế tiếp để không lộ khe hở khi làm tròn
+              width: w + 1,
+              height: _thickness,
+              child: Image.asset(
+                ArtAssets.frameTile,
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.medium,
+              ),
+            ),
+        ],
       ),
-      Paint()..color = const Color(0xFFFFD23F),
     );
+  }
 
-    const pattern = CloudPatternPainter(color: Color(0xAAF58220), cell: 38);
-    void band_(Rect r) {
-      canvas.save();
-      canvas.clipRect(r);
-      canvas.translate(r.left, r.top);
-      pattern.paint(canvas, r.size);
-      canvas.restore();
-    }
-
-    band_(Rect.fromLTRB(outer.left, outer.top, outer.right, inner.top));
-    band_(Rect.fromLTRB(outer.left, inner.bottom, outer.right, outer.bottom));
-    band_(Rect.fromLTRB(outer.left, inner.top, inner.left, inner.bottom));
-    band_(Rect.fromLTRB(inner.right, inner.top, outer.right, inner.bottom));
-
-    canvas.drawRect(
-      inner,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFF59D), Color(0xFFFFFDE7), Color(0xFFFFF59D)],
-        ).createShader(inner),
+  Widget _corner({required bool flipX, required bool flipY}) {
+    return Transform.flip(
+      flipX: flipX,
+      flipY: flipY,
+      child: Image.asset(
+        ArtAssets.frameCorner,
+        width: _cornerW,
+        height: _cornerH,
+        fit: BoxFit.fill,
+        filterQuality: FilterQuality.medium,
+      ),
     );
-    final line = Paint()
-      ..color = _orange
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5;
-    canvas.drawRect(inner, line);
-    canvas.drawRect(outer, line);
   }
 
   @override
-  bool shouldRepaint(_FramePainter old) => old.band != band;
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth;
+        final h = c.maxHeight;
+        final left = _inset;
+        final top = _inset;
+        final right = w - _inset;
+        final bottom = h - _inset;
+        final stripLen = math.max(0.0, right - left - 2 * _cornerW);
+        final n = math.max(1, (stripLen / _tileW).round());
+        final bars = Container(color: _barColor);
+        return Stack(
+          children: [
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFFFFF59D), Color(0xFFFFFDE7), Color(0xFFFFF59D)],
+                  ),
+                ),
+              ),
+            ),
+            // dải viền trên / dưới (dải dưới lật dọc)
+            Positioned(
+              left: left + _cornerW,
+              top: top,
+              width: stripLen,
+              height: _thickness,
+              child: _strip(stripLen, n),
+            ),
+            Positioned(
+              left: left + _cornerW,
+              top: bottom - _thickness,
+              width: stripLen,
+              height: _thickness,
+              child: Transform.flip(flipY: true, child: _strip(stripLen, n)),
+            ),
+            // hai thanh dọc
+            Positioned(
+              left: left + _barX,
+              top: top + _barStart,
+              width: _barW,
+              bottom: (h - bottom) + _barStart,
+              child: bars,
+            ),
+            Positioned(
+              right: (w - right) + _barX,
+              top: top + _barStart,
+              width: _barW,
+              bottom: (h - bottom) + _barStart,
+              child: bars,
+            ),
+            // bốn góc
+            Positioned(left: left, top: top, child: _corner(flipX: false, flipY: false)),
+            Positioned(right: w - right, top: top, child: _corner(flipX: true, flipY: false)),
+            Positioned(left: left, bottom: h - bottom, child: _corner(flipX: false, flipY: true)),
+            Positioned(right: w - right, bottom: h - bottom, child: _corner(flipX: true, flipY: true)),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _EdgePainter extends CustomPainter {

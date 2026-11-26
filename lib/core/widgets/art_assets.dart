@@ -1,37 +1,71 @@
 import 'package:flutter/material.dart';
 
-/// Hình nghệ thuật dùng chung: hai con rồng (quay trái / quay phải) và băng rôn.
+/// Hình nghệ thuật dùng chung (nằm trong `assets/images/`).
 abstract final class ArtAssets {
-  static const dragonFacingRight = 'assets/images/rong_quay_phai.webp';
-  static const dragonFacingLeft = 'assets/images/rong_quay_trai.webp';
-  static const phoenixFacingRight = 'assets/images/phung_quay_phai.webp';
-  static const phoenixFacingLeft = 'assets/images/phung_quay_trai.webp';
-  static const banner = 'assets/images/bang_ron.webp';
+  // --- Phả đồ ---
+  /// Rồng nét (từ file Asian-Dragon-Line-Art.svg), đầu quay sang phải / trái.
+  static const phaDoDragonFacingRight = 'assets/images/rong_phado_phai.webp';
+  static const phaDoDragonFacingLeft = 'assets/images/rong_phado_trai.webp';
+  static const phaDoDragonAspect = 1800 / 706;
 
-  /// Tỉ lệ rộng / cao của ảnh.
-  static const dragonAspect = 1500 / 704;
-  static const phoenixAspect = 1200 / 1213;
-  static const bannerAspect = 1800 / 681;
+  /// Cuốn thư (băng rôn) lấy từ file Gia_pha_3.cdr.
+  static const scroll = 'assets/images/cuon_thu.webp';
+  static const scrollAspect = 2000 / 590;
 
-  static String dragon({required bool faceRight}) =>
-      faceRight ? dragonFacingRight : dragonFacingLeft;
+  /// Họa tiết khung bao (Gia_pha_3.cdr): góc trên-trái và một đoạn dải viền lặp lại.
+  static const frameCorner = 'assets/images/khung_goc.webp';
+  static const frameCornerAspect = 600 / 602;
+  static const frameTile = 'assets/images/khung_dai.webp';
+  static const frameTileAspect = 484 / 249;
 
-  static String phoenix({required bool faceRight}) =>
-      faceRight ? phoenixFacingRight : phoenixFacingLeft;
+  // --- Các trang khác: rồng, phụng nét đen (R022.cdr), nền trong suốt, tô màu được ---
+  /// Rồng đứng, đầu quay sang trái.
+  static const dragonArt = 'assets/images/rong_dung.webp';
+  static const dragonArtAspect = 700 / 1693;
+
+  /// Phụng đứng, đầu quay sang phải.
+  static const phoenixArt = 'assets/images/phung_dung.webp';
+  static const phoenixArtAspect = 1000 / 1411;
 }
 
-/// Hình rồng. [faceRight] = true: đầu rồng quay sang phải (đặt ở bên trái,
-/// chầu vào giữa); false: đầu quay sang trái (đặt ở bên phải).
-class DragonImage extends StatelessWidget {
-  const DragonImage({
+/// Rồng trong phả đồ. [faceRight] = true: đầu rồng quay sang phải (đặt bên trái, chầu vào giữa).
+class PhaDoDragon extends StatelessWidget {
+  const PhaDoDragon({
     super.key,
     this.faceRight = true,
     this.opacity = 1,
     this.fit = BoxFit.contain,
-    this.alignment = Alignment.center,
   });
 
   final bool faceRight;
+  final double opacity;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = Image.asset(
+      faceRight ? ArtAssets.phaDoDragonFacingRight : ArtAssets.phaDoDragonFacingLeft,
+      fit: fit,
+      filterQuality: FilterQuality.high,
+      gaplessPlayback: true,
+    );
+    if (opacity >= 1) return image;
+    return Opacity(opacity: opacity, child: image);
+  }
+}
+
+/// Hình nét đơn sắc (nền trong suốt) tô theo [color].
+class _TintedArt extends StatelessWidget {
+  const _TintedArt({
+    required this.asset,
+    required this.color,
+    required this.opacity,
+    required this.fit,
+    required this.alignment,
+  });
+
+  final String asset;
+  final Color color;
   final double opacity;
   final BoxFit fit;
   final AlignmentGeometry alignment;
@@ -39,7 +73,9 @@ class DragonImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image = Image.asset(
-      ArtAssets.dragon(faceRight: faceRight),
+      asset,
+      color: color,
+      colorBlendMode: BlendMode.srcIn,
       fit: fit,
       alignment: alignment,
       filterQuality: FilterQuality.high,
@@ -50,31 +86,52 @@ class DragonImage extends StatelessWidget {
   }
 }
 
-/// Hình chim phụng (nét cam, nền trong suốt). [faceRight] như [DragonImage].
-class PhoenixImage extends StatelessWidget {
-  const PhoenixImage({
+/// Rồng đứng (đầu quay trái). Mặc định tô nâu đỏ đậm, đổi bằng [color].
+class DragonArt extends StatelessWidget {
+  const DragonArt({
     super.key,
-    this.faceRight = true,
+    this.color = const Color(0xFF5B1A12),
     this.opacity = 1,
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
   });
 
-  final bool faceRight;
+  final Color color;
   final double opacity;
   final BoxFit fit;
   final AlignmentGeometry alignment;
 
   @override
-  Widget build(BuildContext context) {
-    final image = Image.asset(
-      ArtAssets.phoenix(faceRight: faceRight),
-      fit: fit,
-      alignment: alignment,
-      filterQuality: FilterQuality.high,
-      gaplessPlayback: true,
-    );
-    if (opacity >= 1) return image;
-    return Opacity(opacity: opacity, child: image);
-  }
+  Widget build(BuildContext context) => _TintedArt(
+        asset: ArtAssets.dragonArt,
+        color: color,
+        opacity: opacity,
+        fit: fit,
+        alignment: alignment,
+      );
+}
+
+/// Phụng đứng (đầu quay phải). Mặc định tô nâu đỏ đậm, đổi bằng [color].
+class PhoenixArt extends StatelessWidget {
+  const PhoenixArt({
+    super.key,
+    this.color = const Color(0xFF5B1A12),
+    this.opacity = 1,
+    this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
+  });
+
+  final Color color;
+  final double opacity;
+  final BoxFit fit;
+  final AlignmentGeometry alignment;
+
+  @override
+  Widget build(BuildContext context) => _TintedArt(
+        asset: ArtAssets.phoenixArt,
+        color: color,
+        opacity: opacity,
+        fit: fit,
+        alignment: alignment,
+      );
 }

@@ -40,7 +40,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 220,
+          height: 200,
           child: PageView(
             controller: _controller,
             onPageChanged: (i) => setState(() => _page = i),
