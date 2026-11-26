@@ -658,6 +658,9 @@ class _PhaCard extends StatelessWidget {
     final photo = personPhotoFile(person);
     // Chữ to theo ô nhưng không gấp đôi hẳn, để vẫn vừa chiều cao thẻ.
     final fs = 1 + (scale - 1) * 0.75;
+    // Vòng tròn số nằm gọn trong thẻ (góc trên-trái); chừa chỗ hai bên để tên vẫn ở giữa.
+    final badgeD = 17 * fs;
+    final side = badge == null ? 0.0 : badgeD * 0.9;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -672,8 +675,11 @@ class _PhaCard extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             child: InkWell(
               onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.all(4),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Padding(
+                padding: EdgeInsets.fromLTRB(4 + side, 4, 4 + side, 4),
                 child: Row(
                   children: [
                     if (photo != null)
@@ -730,15 +736,17 @@ class _PhaCard extends StatelessWidget {
                   ],
                 ),
               ),
+                  if (badge != null)
+                    Positioned(
+                      left: 3,
+                      top: 3,
+                      child: _NumberBadge(number: badge!, scale: fs),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
-        if (badge != null)
-          Positioned(
-            left: -5 * fs,
-            top: -5 * fs,
-            child: _NumberBadge(number: badge!, scale: fs),
-          ),
       ],
     );
   }

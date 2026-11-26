@@ -132,4 +132,34 @@ void main() {
       expect(const FamilyData([], []).generationCount, 0);
     });
   });
+
+  group('người có 2 vợ/chồng', () {
+    // ông có hai bà: b1 -> con a1 (con chung), b2 -> con a2 (con chung); riêng: con r.
+    const ong = Person(id: 'ong', fullName: 'Ông', gender: Gender.male);
+    const b1 = Person(id: 'b1', fullName: 'Bà 1', gender: Gender.female);
+    const b2 = Person(id: 'b2', fullName: 'Bà 2', gender: Gender.female);
+    const a1 = Person(id: 'a1', fullName: 'A1');
+    const a2 = Person(id: 'a2', fullName: 'A2');
+    const r = Person(id: 'r', fullName: 'R');
+    Relationship rel(String id, String a, String b, RelationType t) =>
+        Relationship(id: id, personAId: a, personBId: b, type: t);
+    final data = FamilyData(const [ong, b1, b2, a1, a2, r], [
+      rel('s1', 'ong', 'b1', RelationType.spouse),
+      rel('s2', 'ong', 'b2', RelationType.spouse),
+      rel('1', 'ong', 'a1', RelationType.parentChild),
+      rel('2', 'b1', 'a1', RelationType.parentChild),
+      rel('3', 'ong', 'a2', RelationType.parentChild),
+      rel('4', 'b2', 'a2', RelationType.parentChild),
+      rel('5', 'ong', 'r', RelationType.parentChild),
+    ]);
+
+    test('ông thấy tất cả các con', () {
+      expect(_ids(data.childrenOfUnit('ong')).toSet(), {'a1', 'a2', 'r'});
+    });
+
+    test('mỗi bà chỉ thấy con đã đánh dấu là của mình', () {
+      expect(_ids(data.childrenOfUnit('b1')), ['a1']);
+      expect(_ids(data.childrenOfUnit('b2')), ['a2']);
+    });
+  });
 }

@@ -11,7 +11,7 @@ có thể gộp nhiều đời vào một hàng (Cài đặt > Gộp nhiều đ�
 
 **Xem phả đồ**: màn hình dọc thì phả đồ tự xoay dọc cho to (nút xoay ở góc dưới phải để đổi lại), phóng to/thu nhỏ không giới hạn bằng hai ngón, nút "vừa khung nhìn" để về vị trí ban đầu.
 
-**Cha mẹ / con**: trong form thành viên có mục "Cha mẹ" (chọn cha/mẹ, nếu người đó có nhiều vợ/chồng thì chọn tiếp người còn lại) và mục "Con" (chọn con có sẵn, chọn từng con là con chung hay con riêng). Thêm con cho người đã có vợ/chồng cũng hỏi con chung hay con riêng. Trên phả đồ, người có từ 2 vợ/chồng được ghi số 1, 2... trong vòng tròn nhỏ ở góc thẻ vợ/chồng, và con ghi số của người vợ/chồng là cha/mẹ còn lại. Hai hàng đầu của phả đồ có ô tên rộng gấp đôi.
+**Cha mẹ / con**: trong form thành viên có mục "Cha mẹ" (chọn cha/mẹ, nếu người đó có nhiều vợ/chồng thì chọn tiếp người còn lại) và mục "Con" (chọn con có sẵn, chọn từng con là con chung hay con riêng). Thêm con cho người đã có vợ/chồng cũng hỏi con chung hay con riêng. Trên phả đồ, người có từ 2 vợ/chồng được ghi số 1, 2... trong vòng tròn nhỏ ở góc thẻ vợ/chồng, và con ghi số của người vợ/chồng là cha/mẹ còn lại (số nằm gọn trong thẻ). Con đã đánh dấu 1 hoặc 2 chỉ hiện trong danh sách con của người vợ/chồng đó (và của người chồng/vợ chung). Có thể chọn nhiều con có sẵn một lần. Hai hàng đầu của phả đồ có ô tên rộng gấp đôi.
 
 **Thống kê** (nút biểu đồ ở trang Gia phả): tổng số đời, số người, nam/nữ, còn sống/đã mất, con cháu trực hệ (không tính dâu, rể) chia trai/gái. Nút "Chèn ảnh" trong soạn bài luôn nằm cố định ở trên cùng.
 

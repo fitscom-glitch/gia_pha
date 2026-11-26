@@ -171,15 +171,19 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       ..._ancestorsOf(data, me),
       for (final r in _children) r.child.id,
     };
-    final picked = await showPersonPicker(
+    final picked = await showPersonMultiPicker(
       context,
-      title: 'Chọn người làm con',
+      title: 'Chọn các con',
       candidates: [for (final p in data.persons) if (!banned.contains(p.id)) p],
       generations: _gens,
     );
-    if (picked == null) return;
+    if (picked == null || picked.isEmpty) return;
     final sp = data.spousesOf(me);
-    setState(() => _children.add(_ChildRow(picked, sp.length == 1 ? sp.first.id : null)));
+    setState(() {
+      for (final c in picked) {
+        _children.add(_ChildRow(c, sp.length == 1 ? sp.first.id : null));
+      }
+    });
   }
 
   /// Ô chọn "người cha/mẹ còn lại" trong số vợ/chồng của [ownerId]; từ 2 vợ/chồng thì đánh số ①②.
@@ -382,7 +386,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
         child: TextButton.icon(
           onPressed: _addChild,
           icon: const Icon(Icons.person_add_alt),
-          label: const Text('Chọn thêm con có sẵn'),
+          label: const Text('Chọn thêm con (chọn được nhiều người)'),
         ),
       ));
       out.add(const SizedBox(height: 8));

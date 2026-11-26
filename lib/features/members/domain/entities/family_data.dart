@@ -76,11 +76,20 @@ class FamilyData {
       .map((r) => r.personAId == id ? r.personBId : r.personAId));
 
   /// Con của một người và của các vợ/chồng, gộp lại, theo thứ tự anh em.
+  ///
+  /// Trường hợp một người vợ/chồng của [id] lại có từ 2 vợ/chồng (vd [id] là bà thứ hai của một
+  /// ông có hai bà): con của ông chỉ được tính cho [id] khi [id] cũng là cha/mẹ của con đó
+  /// (con đã đánh dấu 1 hoặc 2), nên con của bà kia không lẫn vào danh sách này.
   List<Person> childrenOfUnit(String id) {
     final seen = <String>{};
     final kids = <Person>[];
-    for (final pid in [id, ...spousesOf(id).map((s) => s.id)]) {
-      for (final c in childrenOf(pid)) {
+    for (final c in childrenOf(id)) {
+      if (seen.add(c.id)) kids.add(c);
+    }
+    for (final s in spousesOf(id)) {
+      final shared = spousesOf(s.id).length >= 2; // s có nhiều vợ/chồng: phải phân biệt
+      for (final c in childrenOf(s.id)) {
+        if (shared && !parentsOf(c.id).any((p) => p.id == id)) continue;
         if (seen.add(c.id)) kids.add(c);
       }
     }
