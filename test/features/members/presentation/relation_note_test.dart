@@ -26,4 +26,20 @@ void main() {
     );
     expect(relationNote(data, con, includeParents: false), isNull);
   });
+
+  test('có 2 vợ/chồng thì đánh số ①②; "Vợ" và "Con của" nằm trên hai dòng riêng', () {
+    const a = Person(id: 'a', fullName: 'Ông A', gender: Gender.male);
+    const w1 = Person(id: 'w1', fullName: 'Bà Một', gender: Gender.female);
+    const w2 = Person(id: 'w2', fullName: 'Bà Hai', gender: Gender.female);
+    const c = Person(id: 'c', fullName: 'Con C', gender: Gender.male);
+    final d = FamilyData(const [a, w1, w2, c], const [
+      Relationship(id: '1', personAId: 'a', personBId: 'w1', type: RelationType.spouse),
+      Relationship(id: '2', personAId: 'a', personBId: 'w2', type: RelationType.spouse),
+      Relationship(id: '3', personAId: 'a', personBId: 'c', type: RelationType.parentChild),
+      Relationship(id: '4', personAId: 'w2', personBId: 'c', type: RelationType.parentChild),
+    ]);
+    expect(relationNote(d, a), 'Vợ: ① Bà Một, ② Bà Hai');
+    expect(relationNote(d, c), 'Con của: Ông A & ② Bà Hai');
+    expect(circledNumber(3), '③');
+  });
 }

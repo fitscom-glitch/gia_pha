@@ -19,6 +19,9 @@ class _FakeRepository implements FamilyRepository {
   }
 
   @override
+  Future<void> replaceParents(String childId, List<Relationship> parents) async {}
+
+  @override
   Future<void> deletePerson(String id) async {}
 
   @override

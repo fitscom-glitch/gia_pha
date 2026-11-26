@@ -11,18 +11,27 @@ class LayoutConfig {
     this.hGap = 28,
     this.vGap = 64,
     this.margin = 32,
+    this.wideRows = 2,
+    this.wideFactor = 2.0,
   });
 
   final double cardW, cardH, spouseGap, hGap, vGap, margin;
+
+  /// Số hàng đầu tiên (từ trên xuống) có ô tên rộng gấp [wideFactor] lần.
+  final int wideRows;
+  final double wideFactor;
 }
 
 /// Vị trí góc trên-trái của một đơn vị (người + vợ/chồng) và hàng của nó.
 class PositionedUnit {
-  const PositionedUnit(this.node, this.x, this.y, this.row);
+  const PositionedUnit(this.node, this.x, this.y, this.row, this.cardW);
 
   final TreeNode node;
   final double x, y;
   final int row;
+
+  /// Bề ngang mỗi thẻ trong đơn vị này (hai hàng đầu rộng hơn).
+  final double cardW;
 }
 
 class TreeEdge {
@@ -82,9 +91,13 @@ class _Layouter {
   int baseRow = 0;
   int maxOffset = 0;
 
+  /// Bề ngang thẻ của đơn vị [n]: hai hàng đầu tiên rộng gấp đôi.
+  double cardWOf(TreeNode n) =>
+      rowOf(n.person) - baseRow < c.wideRows ? c.cardW * c.wideFactor : c.cardW;
+
   double unitW(TreeNode n) {
     final k = 1 + n.spouses.length;
-    return k * c.cardW + (k - 1) * c.spouseGap;
+    return k * cardWOf(n) + (k - 1) * c.spouseGap;
   }
 
   _Segment build(TreeNode start) {
@@ -140,13 +153,14 @@ class _Layouter {
     var x = left + (sw - unitsW(s)) / 2;
     for (final m in s.members) {
       final w = unitW(m);
-      units.add(PositionedUnit(m, x, y, s.row));
+      final cw = cardWOf(m);
+      units.add(PositionedUnit(m, x, y, s.row, cw));
       for (var i = 0; i < m.spouses.length; i++) {
-        final right = x + i * (c.cardW + c.spouseGap) + c.cardW;
+        final right = x + i * (cw + c.spouseGap) + cw;
         final midY = y + c.cardH / 2;
         spouseLinks.add(TreeEdge(right, midY, right + c.spouseGap, midY));
       }
-      _centers[m] = x + c.cardW / 2;
+      _centers[m] = x + cw / 2;
       x += w + c.hGap;
     }
     var childLeft = left + (sw - exitsW(s)) / 2;

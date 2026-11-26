@@ -213,7 +213,7 @@ class _PersonListPageState extends ConsumerState<PersonListPage> {
     Person p,
     int depth,
   ) {
-    final indent = (depth > 5 ? 5 : depth) * 10.0;
+    const indent = 0.0; // danh sách không thụt dòng theo đời
     final g = gens[p.id];
     final order = birthOrderLabel(p.birthOrder);
     final sub = [

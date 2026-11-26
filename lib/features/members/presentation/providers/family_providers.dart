@@ -11,6 +11,7 @@ import 'package:gia_pha/features/members/domain/usecases/delete_member.dart';
 import 'package:gia_pha/features/members/domain/usecases/load_family.dart';
 import 'package:gia_pha/features/members/domain/usecases/reorder_siblings.dart';
 import 'package:gia_pha/features/members/domain/usecases/save_member.dart';
+import 'package:gia_pha/features/members/domain/usecases/set_parents.dart';
 
 // --- Dependency injection (override các provider này khi test) ---
 
@@ -26,6 +27,10 @@ final loadFamilyProvider = Provider<LoadFamily>(
 
 final saveMemberProvider = Provider<SaveMember>(
   (ref) => SaveMember(ref.watch(familyRepositoryProvider)),
+);
+
+final setParentsProvider = Provider<SetParents>(
+  (ref) => SetParents(ref.watch(familyRepositoryProvider)),
 );
 
 final deleteMemberProvider = Provider<DeleteMember>(
@@ -68,6 +73,12 @@ class FamilyNotifier extends AsyncNotifier<FamilyData> {
       toSave = person.withPhoto(null);
     }
     await ref.read(saveMemberProvider)(toSave, anchorId: anchorId, addAs: addAs);
+    await _reload();
+  }
+
+  /// Đặt lại cha/mẹ của [childId] (thay toàn bộ các quan hệ cha/mẹ cũ).
+  Future<void> setParents(String childId, List<String> parentIds) async {
+    await ref.read(setParentsProvider)(childId, parentIds);
     await _reload();
   }
 

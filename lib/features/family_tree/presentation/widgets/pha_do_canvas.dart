@@ -62,7 +62,7 @@ class PhaDoCanvas extends StatelessWidget {
   /// Hình học phần đầu (băng rôn + hai rồng): mọi kích thước tỉ lệ theo chiều rộng phả đồ,
   /// nên phả đồ càng lớn thì băng rôn và rồng càng to.
   static _HeaderGeom _geom(double canvasWidth) =>
-      _HeaderGeom(canvasWidth, _band + 10, _band);
+      _HeaderGeom(canvasWidth, 150, _band);
 
   static Size sizeOf(TreeLayoutResult layout) {
     final w0 = layout.width + 2 * (_band + _sideW) + _labelW;
@@ -81,6 +81,7 @@ class PhaDoCanvas extends StatelessWidget {
     final innerW = size.width - contentLeft - _sideW - _band;
     final treeX = contentLeft + (innerW - layout.width) / 2;
     final geom = _geom(size.width);
+    final childBadges = _childBadges(data);
     final treeY = _band + geom.height;
     final cfg = layout.config;
     final trimmed = clanName.trim();
@@ -139,14 +140,18 @@ class PhaDoCanvas extends StatelessWidget {
           for (final u in layout.units)
             for (final (i, p) in [u.node.person, ...u.node.spouses].indexed)
               Positioned(
-                left: treeX + u.x + i * (cfg.cardW + cfg.spouseGap),
+                left: treeX + u.x + i * (u.cardW + cfg.spouseGap),
                 top: treeY + u.y,
-                width: cfg.cardW,
+                width: u.cardW,
                 height: cfg.cardH,
                 child: _PhaCard(
                   person: p,
                   fill: generationFill(generations[p.id] ?? generations[u.node.person.id] ?? 0, p.gender),
                   note: relationNote(data, p, includeParents: false),
+                  scale: u.cardW / cfg.cardW,
+                  // Người có từ 2 vợ/chồng: vợ/chồng thứ nhất ghi 1, thứ hai ghi 2...;
+                  // con ghi số của người vợ/chồng là cha/mẹ còn lại.
+                  badge: (i >= 1 && u.node.spouses.length >= 2) ? i : (i == 0 ? childBadges[p.id] : null),
                   onTap: () => onOpenPerson(p.id),
                 ),
               ),
@@ -155,6 +160,22 @@ class PhaDoCanvas extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Số thứ tự (1, 2, ...) của người vợ/chồng là cha/mẹ còn lại của từng người con,
+  /// chỉ tính khi cha/mẹ có từ 2 vợ/chồng.
+  Map<String, int> _childBadges(FamilyData data) {
+    final out = <String, int>{};
+    for (final u in layout.units) {
+      final n = u.node;
+      if (n.spouses.length < 2) continue;
+      for (final ch in n.children) {
+        final parents = data.parentsOf(ch.person.id).map((e) => e.id).toSet();
+        final j = n.spouses.indexWhere((s) => parents.contains(s.id));
+        if (j >= 0) out[ch.person.id] = j + 1;
+      }
+    }
+    return out;
   }
 
   /// Rồng chìm: một hoặc vài con rồng (xen kẽ quay trái/phải) lấp đầy phần nền bên dưới băng rôn,
@@ -442,18 +463,21 @@ class _CurvedBannerTextPainter extends CustomPainter {
 }
 
 /// Khung bao bản lớn: dải viền rộng nền vàng, họa tiết hồi văn cam (từ Gia_pha_3.cdr) chạy
-/// liên tục cả bốn cạnh (cạnh dọc xoay 90°), bốn góc có ô vuông cam; nền giấy vàng nhạt.
+/// liên tục cả bốn cạnh (cạnh dọc xoay 90°), bốn góc dùng góc trang trí của Gia_pha_3.cdr;
+/// nền giấy vàng nhạt.
 class _Frame extends StatelessWidget {
   const _Frame();
 
   /// Cách mép canvas và độ dày dải viền (đơn vị logic); `inset + thickness` = lề `_band`.
   static const double _inset = 10;
   static const double _thickness = 48;
-  static const _orange = Color(0xFFF07C00);
   static const _bandFill = Color(0xFFFFE08A);
 
-  // Ảnh dải viền: 484×249px.
-  static const double _tileW = _thickness * 484 / 249;
+  // Ảnh gốc: dải viền cao 249px; góc 1196×1200px; ô hồi văn 484px.
+  static const double _s = _thickness / 249;
+  static const double _tileW = 484 * _s;
+  static const double _cornerW = 1196 * _s;
+  static const double _cornerH = 1200 * _s;
 
   /// Một dải viền nằm ngang dài [length], gồm [n] ô hồi văn nối nhau.
   Widget _strip(double length, int n) {
@@ -483,23 +507,16 @@ class _Frame extends StatelessWidget {
     );
   }
 
-  /// Ô vuông ở góc: viền cam, ô trong vàng, chấm cam giữa.
-  Widget _cornerStone() {
-    return SizedBox(
-      width: _thickness,
-      height: _thickness,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(color: _orange),
-        child: Padding(
-          padding: const EdgeInsets.all(_thickness * 0.16),
-          child: DecoratedBox(
-            decoration: const BoxDecoration(color: _bandFill),
-            child: Padding(
-              padding: const EdgeInsets.all(_thickness * 0.17),
-              child: const DecoratedBox(decoration: BoxDecoration(color: _orange)),
-            ),
-          ),
-        ),
+  Widget _corner({required bool flipX, required bool flipY}) {
+    return Transform.flip(
+      flipX: flipX,
+      flipY: flipY,
+      child: Image.asset(
+        ArtAssets.frameCorner,
+        width: _cornerW,
+        height: _cornerH,
+        fit: BoxFit.fill,
+        filterQuality: FilterQuality.medium,
       ),
     );
   }
@@ -510,9 +527,8 @@ class _Frame extends StatelessWidget {
       builder: (context, c) {
         final w = c.maxWidth;
         final h = c.maxHeight;
-        const t = _thickness;
-        final hLen = math.max(0.0, w - 2 * _inset - 2 * t);
-        final vLen = math.max(0.0, h - 2 * _inset - 2 * t);
+        final hLen = math.max(0.0, w - 2 * _inset - 2 * _cornerW);
+        final vLen = math.max(0.0, h - 2 * _inset - 2 * _cornerH);
         final hn = math.max(1, (hLen / _tileW).round());
         final vn = math.max(1, (vLen / _tileW).round());
         final outer = Rect.fromLTWH(_inset, _inset, w - 2 * _inset, h - 2 * _inset);
@@ -535,56 +551,39 @@ class _Frame extends StatelessWidget {
               rect: outer,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  border: Border.all(color: _bandFill, width: t),
+                  border: Border.all(color: _bandFill, width: _thickness),
                 ),
               ),
             ),
             // trên (đầu cạnh hướng ra ngoài)
-            Positioned(left: _inset + t, top: _inset, child: _strip(hLen, hn)),
+            Positioned(left: _inset + _cornerW, top: _inset, child: _strip(hLen, hn)),
             // dưới (lật dọc)
             Positioned(
-              left: _inset + t,
+              left: _inset + _cornerW,
               bottom: _inset,
               child: Transform.flip(flipY: true, child: _strip(hLen, hn)),
             ),
             // trái (xoay ngược chiều kim đồng hồ để đầu cạnh hướng ra ngoài)
             Positioned(
               left: _inset,
-              top: _inset + t,
-              width: t,
+              top: _inset + _cornerH,
+              width: _thickness,
               height: vLen,
               child: RotatedBox(quarterTurns: 3, child: _strip(vLen, vn)),
             ),
             // phải
             Positioned(
               right: _inset,
-              top: _inset + t,
-              width: t,
+              top: _inset + _cornerH,
+              width: _thickness,
               height: vLen,
               child: RotatedBox(quarterTurns: 1, child: _strip(vLen, vn)),
             ),
-            // bốn góc
-            Positioned(left: _inset, top: _inset, child: _cornerStone()),
-            Positioned(right: _inset, top: _inset, child: _cornerStone()),
-            Positioned(left: _inset, bottom: _inset, child: _cornerStone()),
-            Positioned(right: _inset, bottom: _inset, child: _cornerStone()),
-            // đường viền mảnh ở mép trong và mép ngoài của dải
-            Positioned.fromRect(
-              rect: outer,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(border: Border.all(color: _orange, width: 2)),
-                ),
-              ),
-            ),
-            Positioned.fromRect(
-              rect: outer.deflate(t),
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(border: Border.all(color: _orange, width: 2)),
-                ),
-              ),
-            ),
+            // bốn góc trang trí
+            Positioned(left: _inset, top: _inset, child: _corner(flipX: false, flipY: false)),
+            Positioned(right: _inset, top: _inset, child: _corner(flipX: true, flipY: false)),
+            Positioned(left: _inset, bottom: _inset, child: _corner(flipX: false, flipY: true)),
+            Positioned(right: _inset, bottom: _inset, child: _corner(flipX: true, flipY: true)),
           ],
         );
       },
@@ -634,90 +633,144 @@ class _EdgePainter extends CustomPainter {
       old.childEdges != childEdges || old.spouseLinks != spouseLinks;
 }
 
-/// Thẻ chữ nhật tô màu theo đời: tên in hoa đậm, ghi chú quan hệ nhỏ bên dưới.
+/// Thẻ chữ nhật tô màu theo đời: tên in hoa đậm, ghi chú quan hệ nhỏ bên dưới
+/// (vợ/chồng và "con của" nằm trên các dòng riêng). [scale] > 1: ô rộng hơn nên chữ to tương ứng.
+/// [badge]: số trong vòng tròn nhỏ ở góc trên-trái (thứ tự vợ/chồng, hoặc con của vợ/chồng số mấy).
 class _PhaCard extends StatelessWidget {
   const _PhaCard({
     required this.person,
     required this.fill,
     required this.note,
     required this.onTap,
+    this.scale = 1,
+    this.badge,
   });
 
   final Person person;
   final Color fill;
   final String? note;
   final VoidCallback onTap;
+  final double scale;
+  final int? badge;
 
   @override
   Widget build(BuildContext context) {
     final photo = personPhotoFile(person);
-    return Material(
-      color: fill,
-      elevation: 1.5,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(3)),
-        side: BorderSide(color: Colors.white, width: 1.2),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: [
-              if (photo != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: ClipOval(
-                    child: Image.file(
-                      File(photo.path),
-                      width: 30,
-                      height: 30,
-                      fit: BoxFit.cover,
-                      cacheWidth: 90,
-                    ),
-                  ),
-                ),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+    // Chữ to theo ô nhưng không gấp đôi hẳn, để vẫn vừa chiều cao thẻ.
+    final fs = 1 + (scale - 1) * 0.75;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: Material(
+            color: fill,
+            elevation: 1.5,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(3)),
+              side: BorderSide(color: Colors.white, width: 1.2),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Row(
                   children: [
-                    // Tên dài quá ô thì tự thu nhỏ chữ để vẫn nằm trên một hàng.
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        person.fullName.toUpperCase(),
-                        maxLines: 1,
-                        softWrap: false,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                          height: 1.15,
-                          color: _navy,
-                        ),
-                      ),
-                    ),
-                    if (note != null)
+                    if (photo != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          note!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 9.5,
-                            height: 1.1,
-                            color: Color(0xFF3E2723),
+                        padding: const EdgeInsets.only(right: 4),
+                        child: ClipOval(
+                          child: Image.file(
+                            File(photo.path),
+                            width: 30 * fs,
+                            height: 30 * fs,
+                            fit: BoxFit.cover,
+                            cacheWidth: (90 * fs).round(),
                           ),
                         ),
                       ),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Tên dài quá ô thì tự thu nhỏ chữ để vẫn nằm trên một hàng.
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              person.fullName.toUpperCase(),
+                              maxLines: 1,
+                              softWrap: false,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12 * fs,
+                                height: 1.15,
+                                color: _navy,
+                              ),
+                            ),
+                          ),
+                          if (note != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                note!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 9.5 * fs,
+                                  height: 1.1,
+                                  color: const Color(0xFF3E2723),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
+        ),
+        if (badge != null)
+          Positioned(
+            left: -5 * fs,
+            top: -5 * fs,
+            child: _NumberBadge(number: badge!, scale: fs),
+          ),
+      ],
+    );
+  }
+}
+
+/// Số 1, 2, ... trong vòng tròn nhỏ.
+class _NumberBadge extends StatelessWidget {
+  const _NumberBadge({required this.number, required this.scale});
+
+  final int number;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = 17 * scale;
+    return Container(
+      width: d,
+      height: d,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.red, width: 1.4),
+        boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 2, offset: Offset(0, 1))],
+      ),
+      child: Text(
+        '$number',
+        style: TextStyle(
+          fontSize: 10.5 * scale,
+          fontWeight: FontWeight.w900,
+          height: 1,
+          color: AppColors.red,
         ),
       ),
     );

@@ -12,7 +12,10 @@ abstract final class ArtAssets {
   static const scroll = 'assets/images/cuon_thu.webp';
   static const scrollAspect = 4000 / 1514;
 
-  /// Họa tiết khung bao (Gia_pha_3.cdr): một đoạn dải viền hồi văn lặp lại.
+  /// Họa tiết khung bao (Gia_pha_3.cdr): góc trang trí (trên-trái, lật cho ba góc còn lại)
+  /// và một đoạn dải viền hồi văn lặp lại.
+  static const frameCorner = 'assets/images/khung_goc.webp';
+  static const frameCornerAspect = 600 / 602;
   static const frameTile = 'assets/images/khung_dai.webp';
   static const frameTileAspect = 484 / 249;
 

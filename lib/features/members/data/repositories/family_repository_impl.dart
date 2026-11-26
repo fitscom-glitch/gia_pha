@@ -28,6 +28,13 @@ class FamilyRepositoryImpl implements FamilyRepository {
   }
 
   @override
+  Future<void> replaceParents(String childId, List<Relationship> parents) =>
+      _local.replaceParents(
+        childId,
+        [for (final r in parents) RelationshipModel.fromEntity(r)],
+      );
+
+  @override
   Future<void> deletePerson(String id) => _local.deletePerson(id);
 
   @override

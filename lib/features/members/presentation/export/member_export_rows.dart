@@ -60,7 +60,7 @@ List<MemberExportRow> buildMemberExportRows(FamilyData data) {
       death: p.deathDate == null ? '' : fmt.format(p.deathDate!),
       birthPlace: p.birthPlace ?? '',
       occupation: p.occupation ?? '',
-      spouses: relationNote(data, p, includeParents: false) ?? '',
+      spouses: (relationNote(data, p, includeParents: false) ?? '').replaceAll('\n', ' · '),
       parents: data.parentsOf(p.id).map((x) => x.fullName).join(' & '),
       phone: p.phone ?? '',
       address: p.address ?? '',

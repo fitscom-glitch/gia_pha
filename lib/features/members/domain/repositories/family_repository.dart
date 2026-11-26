@@ -9,6 +9,10 @@ abstract interface class FamilyRepository {
   /// Lưu (thêm hoặc cập nhật) một người, kèm quan hệ mới nếu có, trong cùng 1 giao dịch.
   Future<void> savePerson(Person person, {Relationship? relationship});
 
+  /// Thay toàn bộ quan hệ cha/mẹ của [childId] bằng [parents] (mỗi phần tử là một
+  /// quan hệ parentChild với personBId = [childId]), trong cùng 1 giao dịch.
+  Future<void> replaceParents(String childId, List<Relationship> parents);
+
   Future<void> deletePerson(String id);
 
   /// Đặt "con thứ mấy" = 1..n theo đúng thứ tự của [orderedIds].

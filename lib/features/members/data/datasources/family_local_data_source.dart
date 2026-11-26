@@ -46,6 +46,23 @@ class FamilyLocalDataSource {
     });
   }
 
+  Future<void> replaceParents(
+    String childId,
+    List<RelationshipModel> parents,
+  ) async {
+    final db = await _db.database;
+    await db.transaction((txn) async {
+      await txn.delete(
+        'relationships',
+        where: 'person_b_id = ? AND type = ?',
+        whereArgs: [childId, 'parentChild'],
+      );
+      for (final r in parents) {
+        await txn.insert('relationships', r.toMap());
+      }
+    });
+  }
+
   Future<void> deletePerson(String id) async {
     final db = await _db.database;
     await db.delete('persons', where: 'id = ?', whereArgs: [id]);

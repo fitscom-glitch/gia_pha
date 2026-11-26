@@ -65,14 +65,14 @@ void main() {
       for (var i = 0; i + 1 < kids.length; i++) {
         expect(
           kids[i + 1].x - kids[i].x,
-          greaterThanOrEqualTo(cfg.cardW + cfg.hGap - 0.001),
+          greaterThanOrEqualTo(kids[i].cardW + cfg.hGap - 0.001),
         );
       }
-      final rootCenter = root.x + cfg.cardW / 2;
-      final kidsCenter = (kids.first.x + kids.last.x) / 2 + cfg.cardW / 2;
+      final rootCenter = root.x + root.cardW / 2;
+      final kidsCenter = (kids.first.x + kids.last.x) / 2 + kids.first.cardW / 2;
       expect(rootCenter, closeTo(kidsCenter, 0.001));
       expect(kids.every((k) => k.y > root.y), isTrue);
-      expect(layout.width, greaterThanOrEqualTo(kids.last.x + cfg.cardW));
+      expect(layout.width, greaterThanOrEqualTo(kids.last.x + kids.last.cardW));
     });
 
     test('gộp nhiều đời vào một hàng: cùng y, nằm nối tiếp, không có nét nối trong hàng', () {
@@ -109,7 +109,7 @@ void main() {
       expect(layout.spouseLinks.length, 1);
       expect(
         layout.width,
-        closeTo(2 * cfg.cardW + cfg.spouseGap + 2 * cfg.margin, 0.001),
+        closeTo(2 * layout.units.first.cardW + cfg.spouseGap + 2 * cfg.margin, 0.001),
       );
     });
   });
@@ -125,8 +125,23 @@ void main() {
       final cha = layout.units.firstWhere((u) => u.node.person.id == 'cha');
       final con = layout.units.firstWhere((u) => u.node.person.id == 'con');
       final edge = layout.childEdges.single;
-      expect(edge.fromX, closeTo(cha.x + cfg.cardW / 2, 0.001));
-      expect(edge.toX, closeTo(con.x + cfg.cardW / 2, 0.001));
+      expect(edge.fromX, closeTo(cha.x + cha.cardW / 2, 0.001));
+      expect(edge.toX, closeTo(con.x + con.cardW / 2, 0.001));
     });
+  });
+
+  test('hai hàng đầu có ô tên rộng gấp đôi, các hàng sau giữ nguyên', () {
+    final data = FamilyData(
+      [_p('a'), _p('b'), _p('c'), _p('d')],
+      [_parent('a', 'b'), _parent('b', 'c'), _parent('c', 'd')],
+    );
+    final layout = layoutTree(buildDescendantTree(data, 'a')!);
+    final cfg = layout.config;
+    double w(String id) =>
+        layout.units.firstWhere((u) => u.node.person.id == id).cardW;
+    expect(w('a'), cfg.cardW * 2);
+    expect(w('b'), cfg.cardW * 2);
+    expect(w('c'), cfg.cardW);
+    expect(w('d'), cfg.cardW);
   });
 }
