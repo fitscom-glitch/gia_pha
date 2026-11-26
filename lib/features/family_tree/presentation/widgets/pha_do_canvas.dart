@@ -55,9 +55,6 @@ class PhaDoCanvas extends StatelessWidget {
   static const double _band = 58;
   static const double _labelW = 130;
   static const double _sideW = 24;
-
-  /// Bề rộng cột câu đối thư pháp ở hai bên.
-  static const double _coupletW = 96;
   static const double _footer = 80;
   static const double _minTreeH = 440;
   static const double _minWidth = 1400;
@@ -65,10 +62,10 @@ class PhaDoCanvas extends StatelessWidget {
   /// Hình học phần đầu (băng rôn + hai rồng): mọi kích thước tỉ lệ theo chiều rộng phả đồ,
   /// nên phả đồ càng lớn thì băng rôn và rồng càng to.
   static _HeaderGeom _geom(double canvasWidth) =>
-      _HeaderGeom(canvasWidth, _band + _sideW + 30, _band);
+      _HeaderGeom(canvasWidth, _band + 10, _band);
 
   static Size sizeOf(TreeLayoutResult layout) {
-    final w0 = layout.width + 2 * (_band + _sideW + _coupletW) + _labelW;
+    final w0 = layout.width + 2 * (_band + _sideW) + _labelW;
     final w = w0 < _minWidth ? _minWidth : w0;
     final h = 2 * _band +
         _geom(w).height +
@@ -80,8 +77,8 @@ class PhaDoCanvas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = sizeOf(layout);
-    final contentLeft = _band + _sideW + _coupletW + _labelW;
-    final innerW = size.width - contentLeft - _sideW - _coupletW - _band;
+    final contentLeft = _band + _sideW + _labelW;
+    final innerW = size.width - contentLeft - _sideW - _band;
     final treeX = contentLeft + (innerW - layout.width) / 2;
     final geom = _geom(size.width);
     final treeY = _band + geom.height;
@@ -111,11 +108,10 @@ class PhaDoCanvas extends StatelessWidget {
           for (final l in layers.where((l) => l.kind == PhaDoLayerKind.decor && !l.front))
             _decor(l, size),
           if (showBanner) ..._buildHeader(geom, size, title),
-          ..._couplets(size, treeY),
           // nhãn các đời
           for (final r in layout.rows)
             Positioned(
-              left: _band + _sideW + _coupletW + 4,
+              left: _band + _sideW + 4,
               top: treeY + r.y + (cfg.cardH - 28) / 2,
               width: _labelW - 12,
               height: 28,
@@ -183,32 +179,6 @@ class PhaDoCanvas extends StatelessWidget {
     ];
   }
 
-  /// Hai câu đối thư pháp dọc hai bên, dưới hai con rồng:
-  /// "Phúc đức tổ tiên gieo trồng từ kiếp trước" / "Nhân tâm con cháu bồi đắp mãi về sau".
-  List<Widget> _couplets(Size size, double treeY) {
-    final top = treeY + 10;
-    // chừa chỗ cho hai góc khung phía dưới
-    final bottom = size.height - 180;
-    final height = bottom - top;
-    if (height < 200) return const [];
-    return [
-      Positioned(
-        left: _band,
-        top: top,
-        width: _coupletW,
-        height: height,
-        child: const _Couplet(asset: ArtAssets.coupletLeft, ruleOnRight: true),
-      ),
-      Positioned(
-        right: _band,
-        top: top,
-        width: _coupletW,
-        height: height,
-        child: const _Couplet(asset: ArtAssets.coupletRight, ruleOnRight: false),
-      ),
-    ];
-  }
-
   /// Băng rôn ở giữa, hai rồng chầu hai bên (không đè lên nhau, thấy đủ đầu rồng).
   List<Widget> _buildHeader(_HeaderGeom g, Size size, String title) {
     final cx = size.width / 2;
@@ -266,43 +236,14 @@ class PhaDoCanvas extends StatelessWidget {
   }
 }
 
-/// Một cột câu đối: chữ thư pháp dọc, kèm đường kẻ cam mảnh ở mép phía trong.
-class _Couplet extends StatelessWidget {
-  const _Couplet({required this.asset, required this.ruleOnRight});
-
-  final String asset;
-  final bool ruleOnRight;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Align(
-          alignment: ruleOnRight ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(width: 2, color: const Color(0xCCF07C00)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          child: Image.asset(
-            asset,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-            gaplessPlayback: true,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Kích thước phần đầu phả đồ, tỉ lệ theo chiều rộng canvas.
 class _HeaderGeom {
   _HeaderGeom(double canvasWidth, double sideInset, double band) {
     final inner = canvasWidth - 2 * sideInset;
     final span = math.min(inner, 3600.0);
-    bannerW = span * 0.40;
+    bannerW = span * 0.36;
     bannerH = bannerW / ArtAssets.scrollAspect;
-    dragonW = span * 0.29;
+    dragonW = span * 0.32;
     dragonH = dragonW / ArtAssets.phaDoDragonAspect;
     top = band + math.max(14.0, bannerH * 0.06);
     // chiều cao từ mép trên canvas đến chỗ bắt đầu cây (tính cả hai lề khung `band`)
@@ -500,59 +441,65 @@ class _CurvedBannerTextPainter extends CustomPainter {
       [for (final l in old.lines) l.text].join('|') != [for (final l in lines) l.text].join('|');
 }
 
-/// Khung bao bằng họa tiết chữ "hồi văn" cam (từ Gia_pha_3.cdr): bốn góc + dải viền
-/// lặp lại trên/dưới + hai thanh dọc hai bên, nền giấy vàng nhạt.
+/// Khung bao bản lớn: dải viền rộng nền vàng, họa tiết hồi văn cam (từ Gia_pha_3.cdr) chạy
+/// liên tục cả bốn cạnh (cạnh dọc xoay 90°), bốn góc có ô vuông cam; nền giấy vàng nhạt.
 class _Frame extends StatelessWidget {
   const _Frame();
 
-  /// Cách mép canvas và độ dày dải viền (đơn vị logic).
+  /// Cách mép canvas và độ dày dải viền (đơn vị logic); `inset + thickness` = lề `_band`.
   static const double _inset = 10;
-  static const double _thickness = 32;
-  static const _barColor = Color(0xFFF07C00);
+  static const double _thickness = 48;
+  static const _orange = Color(0xFFF07C00);
+  static const _bandFill = Color(0xFFFFE08A);
 
-  // Ảnh gốc: dải viền cao 249px; góc 1196×1200px; thanh dọc rộng 63px, cách mép trái 38px,
-  // bắt đầu cách mép trên 1309px.
-  static const double _s = _thickness / 249;
-  static const double _cornerW = 1196 * _s;
-  static const double _cornerH = 1200 * _s;
-  static const double _tileW = 484 * _s;
-  static const double _barW = 63 * _s;
-  static const double _barX = 38 * _s;
-  static const double _barStart = 1309 * _s;
+  // Ảnh dải viền: 484×249px.
+  static const double _tileW = _thickness * 484 / 249;
 
+  /// Một dải viền nằm ngang dài [length], gồm [n] ô hồi văn nối nhau.
   Widget _strip(double length, int n) {
     final w = length / n;
-    return ClipRect(
-      child: Stack(
-        children: [
-          for (var i = 0; i < n; i++)
-            Positioned(
-              left: i * w,
-              top: 0,
-              // chồng 1px lên ô kế tiếp để không lộ khe hở khi làm tròn
-              width: w + 1,
-              height: _thickness,
-              child: Image.asset(
-                ArtAssets.frameTile,
-                fit: BoxFit.fill,
-                filterQuality: FilterQuality.medium,
+    return SizedBox(
+      width: length,
+      height: _thickness,
+      child: ClipRect(
+        child: Stack(
+          children: [
+            for (var i = 0; i < n; i++)
+              Positioned(
+                left: i * w,
+                top: 0,
+                // chồng 1px lên ô kế tiếp để không lộ khe hở khi làm tròn
+                width: w + 1,
+                height: _thickness,
+                child: Image.asset(
+                  ArtAssets.frameTile,
+                  fit: BoxFit.fill,
+                  filterQuality: FilterQuality.medium,
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _corner({required bool flipX, required bool flipY}) {
-    return Transform.flip(
-      flipX: flipX,
-      flipY: flipY,
-      child: Image.asset(
-        ArtAssets.frameCorner,
-        width: _cornerW,
-        height: _cornerH,
-        fit: BoxFit.fill,
-        filterQuality: FilterQuality.medium,
+  /// Ô vuông ở góc: viền cam, ô trong vàng, chấm cam giữa.
+  Widget _cornerStone() {
+    return SizedBox(
+      width: _thickness,
+      height: _thickness,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: _orange),
+        child: Padding(
+          padding: const EdgeInsets.all(_thickness * 0.16),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(color: _bandFill),
+            child: Padding(
+              padding: const EdgeInsets.all(_thickness * 0.17),
+              child: const DecoratedBox(decoration: BoxDecoration(color: _orange)),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -563,15 +510,15 @@ class _Frame extends StatelessWidget {
       builder: (context, c) {
         final w = c.maxWidth;
         final h = c.maxHeight;
-        final left = _inset;
-        final top = _inset;
-        final right = w - _inset;
-        final bottom = h - _inset;
-        final stripLen = math.max(0.0, right - left - 2 * _cornerW);
-        final n = math.max(1, (stripLen / _tileW).round());
-        final bars = Container(color: _barColor);
+        const t = _thickness;
+        final hLen = math.max(0.0, w - 2 * _inset - 2 * t);
+        final vLen = math.max(0.0, h - 2 * _inset - 2 * t);
+        final hn = math.max(1, (hLen / _tileW).round());
+        final vn = math.max(1, (vLen / _tileW).round());
+        final outer = Rect.fromLTWH(_inset, _inset, w - 2 * _inset, h - 2 * _inset);
         return Stack(
           children: [
+            // nền giấy vàng nhạt
             const Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -583,41 +530,61 @@ class _Frame extends StatelessWidget {
                 ),
               ),
             ),
-            // dải viền trên / dưới (dải dưới lật dọc)
-            Positioned(
-              left: left + _cornerW,
-              top: top,
-              width: stripLen,
-              height: _thickness,
-              child: _strip(stripLen, n),
+            // dải viền rộng nền vàng
+            Positioned.fromRect(
+              rect: outer,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: _bandFill, width: t),
+                ),
+              ),
             ),
+            // trên (đầu cạnh hướng ra ngoài)
+            Positioned(left: _inset + t, top: _inset, child: _strip(hLen, hn)),
+            // dưới (lật dọc)
             Positioned(
-              left: left + _cornerW,
-              top: bottom - _thickness,
-              width: stripLen,
-              height: _thickness,
-              child: Transform.flip(flipY: true, child: _strip(stripLen, n)),
+              left: _inset + t,
+              bottom: _inset,
+              child: Transform.flip(flipY: true, child: _strip(hLen, hn)),
             ),
-            // hai thanh dọc
+            // trái (xoay ngược chiều kim đồng hồ để đầu cạnh hướng ra ngoài)
             Positioned(
-              left: left + _barX,
-              top: top + _barStart,
-              width: _barW,
-              bottom: (h - bottom) + _barStart,
-              child: bars,
+              left: _inset,
+              top: _inset + t,
+              width: t,
+              height: vLen,
+              child: RotatedBox(quarterTurns: 3, child: _strip(vLen, vn)),
             ),
+            // phải
             Positioned(
-              right: (w - right) + _barX,
-              top: top + _barStart,
-              width: _barW,
-              bottom: (h - bottom) + _barStart,
-              child: bars,
+              right: _inset,
+              top: _inset + t,
+              width: t,
+              height: vLen,
+              child: RotatedBox(quarterTurns: 1, child: _strip(vLen, vn)),
             ),
             // bốn góc
-            Positioned(left: left, top: top, child: _corner(flipX: false, flipY: false)),
-            Positioned(right: w - right, top: top, child: _corner(flipX: true, flipY: false)),
-            Positioned(left: left, bottom: h - bottom, child: _corner(flipX: false, flipY: true)),
-            Positioned(right: w - right, bottom: h - bottom, child: _corner(flipX: true, flipY: true)),
+            Positioned(left: _inset, top: _inset, child: _cornerStone()),
+            Positioned(right: _inset, top: _inset, child: _cornerStone()),
+            Positioned(left: _inset, bottom: _inset, child: _cornerStone()),
+            Positioned(right: _inset, bottom: _inset, child: _cornerStone()),
+            // đường viền mảnh ở mép trong và mép ngoài của dải
+            Positioned.fromRect(
+              rect: outer,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(border: Border.all(color: _orange, width: 2)),
+                ),
+              ),
+            ),
+            Positioned.fromRect(
+              rect: outer.deflate(t),
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(border: Border.all(color: _orange, width: 2)),
+                ),
+              ),
+            ),
           ],
         );
       },

@@ -6,7 +6,7 @@
 lịch dương/âm, ngày giỗ và sinh nhật, lịch sử dòng họ, tộc ước & hương lễ, chuyện cổ kim, bảng vinh danh,
 di sản & kỷ vật (ảnh), danh bạ, sao lưu/khôi phục.
 
-**Phả đồ**: dạng tranh treo (khung bao họa tiết hồi văn cam, hai rồng vàng kim chầu hai bên cuốn thư, hai câu đối thư pháp dọc hai bên, chữ tên dòng họ uốn cong theo cuốn thư; băng rôn, rồng và rồng chìm tự co dãn theo kích thước phả đồ; hình rồng/phụng/cuốn thư/khung nằm trong `assets/images/`; rồng + phụng ở các trang khác là hình nét đen, tô màu bằng `DragonArt`/`PhoenixArt`). Nét nối đi từ thẻ người cha (người huyết thống) tới thẻ người con, mỗi đời một hàng có nhãn "ĐỜI THỨ N",
+**Phả đồ**: dạng tranh treo (khung bao bản lớn có họa tiết hồi văn cam chạy quanh bốn cạnh, hai rồng vàng cam chầu hai bên cuốn thư, chữ tên dòng họ uốn cong theo cuốn thư; băng rôn, rồng và rồng chìm tự co dãn theo kích thước phả đồ; hình rồng/phụng/cuốn thư/khung nằm trong `assets/images/`; rồng + phụng ở các trang khác là hình nét đen, tô màu bằng `DragonArt`/`PhoenixArt`). Nét nối đi từ thẻ người cha (người huyết thống) tới thẻ người con, mỗi đời một hàng có nhãn "ĐỜI THỨ N",
 có thể gộp nhiều đời vào một hàng (Cài đặt > Gộp nhiều đời, vd `2-5; 8-9`); màu thẻ lệch nhẹ theo từng đời.
 
 **Xem phả đồ**: màn hình dọc thì phả đồ tự xoay dọc cho to (nút xoay ở góc dưới phải để đổi lại), phóng to/thu nhỏ không giới hạn bằng hai ngón, nút "vừa khung nhìn" để về vị trí ban đầu.
