@@ -8,9 +8,15 @@ abstract final class ArtAssets {
   static const phaDoDragonFacingLeft = 'assets/images/rong_phado_trai.webp';
   static const phaDoDragonAspect = 1800 / 706;
 
-  /// Cuốn thư (băng rôn) lấy từ file Gia_pha_3.cdr.
+  /// Cuốn thư (băng rôn), ảnh đã phóng to và làm nét.
   static const scroll = 'assets/images/cuon_thu.webp';
-  static const scrollAspect = 2000 / 590;
+  static const scrollAspect = 4000 / 1514;
+
+  /// Hai câu đối thư pháp hai bên phả đồ (nét đen, nền trong suốt).
+  static const coupletLeft = 'assets/images/cau_doi_trai.webp';
+  static const coupletRight = 'assets/images/cau_doi_phai.webp';
+  static const coupletLeftAspect = 282 / 2363;
+  static const coupletRightAspect = 256 / 2347;
 
   /// Họa tiết khung bao (Gia_pha_3.cdr): góc trên-trái và một đoạn dải viền lặp lại.
   static const frameCorner = 'assets/images/khung_goc.webp';
@@ -28,7 +34,8 @@ abstract final class ArtAssets {
   static const phoenixArtAspect = 1000 / 1411;
 }
 
-/// Rồng trong phả đồ. [faceRight] = true: đầu rồng quay sang phải (đặt bên trái, chầu vào giữa).
+/// Rồng trong phả đồ, tô màu vàng kim. [faceRight] = true: đầu rồng quay sang phải
+/// (đặt bên trái, chầu vào giữa).
 class PhaDoDragon extends StatelessWidget {
   const PhaDoDragon({
     super.key,
@@ -41,13 +48,24 @@ class PhaDoDragon extends StatelessWidget {
   final double opacity;
   final BoxFit fit;
 
+  /// Dải màu vàng kim: sáng ở trên, đậm dần xuống dưới.
+  static const _gold = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFFFE28A), Color(0xFFEBAA2C), Color(0xFFC98516)],
+  );
+
   @override
   Widget build(BuildContext context) {
-    final image = Image.asset(
-      faceRight ? ArtAssets.phaDoDragonFacingRight : ArtAssets.phaDoDragonFacingLeft,
-      fit: fit,
-      filterQuality: FilterQuality.high,
-      gaplessPlayback: true,
+    final image = ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (rect) => _gold.createShader(rect),
+      child: Image.asset(
+        faceRight ? ArtAssets.phaDoDragonFacingRight : ArtAssets.phaDoDragonFacingLeft,
+        fit: fit,
+        filterQuality: FilterQuality.high,
+        gaplessPlayback: true,
+      ),
     );
     if (opacity >= 1) return image;
     return Opacity(opacity: opacity, child: image);

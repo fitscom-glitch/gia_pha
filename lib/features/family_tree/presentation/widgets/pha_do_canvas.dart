@@ -55,6 +55,9 @@ class PhaDoCanvas extends StatelessWidget {
   static const double _band = 58;
   static const double _labelW = 130;
   static const double _sideW = 24;
+
+  /// Bề rộng cột câu đối thư pháp ở hai bên.
+  static const double _coupletW = 96;
   static const double _footer = 80;
   static const double _minTreeH = 440;
   static const double _minWidth = 1400;
@@ -65,7 +68,7 @@ class PhaDoCanvas extends StatelessWidget {
       _HeaderGeom(canvasWidth, _band + _sideW + 30, _band);
 
   static Size sizeOf(TreeLayoutResult layout) {
-    final w0 = layout.width + 2 * (_band + _sideW) + _labelW;
+    final w0 = layout.width + 2 * (_band + _sideW + _coupletW) + _labelW;
     final w = w0 < _minWidth ? _minWidth : w0;
     final h = 2 * _band +
         _geom(w).height +
@@ -77,8 +80,8 @@ class PhaDoCanvas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = sizeOf(layout);
-    final contentLeft = _band + _sideW + _labelW;
-    final innerW = size.width - contentLeft - _sideW - _band;
+    final contentLeft = _band + _sideW + _coupletW + _labelW;
+    final innerW = size.width - contentLeft - _sideW - _coupletW - _band;
     final treeX = contentLeft + (innerW - layout.width) / 2;
     final geom = _geom(size.width);
     final treeY = _band + geom.height;
@@ -108,10 +111,11 @@ class PhaDoCanvas extends StatelessWidget {
           for (final l in layers.where((l) => l.kind == PhaDoLayerKind.decor && !l.front))
             _decor(l, size),
           if (showBanner) ..._buildHeader(geom, size, title),
+          ..._couplets(size, treeY),
           // nhãn các đời
           for (final r in layout.rows)
             Positioned(
-              left: _band + _sideW + 4,
+              left: _band + _sideW + _coupletW + 4,
               top: treeY + r.y + (cfg.cardH - 28) / 2,
               width: _labelW - 12,
               height: 28,
@@ -174,8 +178,34 @@ class PhaDoCanvas extends StatelessWidget {
           top: top,
           width: w,
           height: areaH,
-          child: PhaDoDragon(faceRight: i.isEven, opacity: 0.12),
+          child: PhaDoDragon(faceRight: i.isEven, opacity: 0.16),
         ),
+    ];
+  }
+
+  /// Hai câu đối thư pháp dọc hai bên, dưới hai con rồng:
+  /// "Phúc đức tổ tiên gieo trồng từ kiếp trước" / "Nhân tâm con cháu bồi đắp mãi về sau".
+  List<Widget> _couplets(Size size, double treeY) {
+    final top = treeY + 10;
+    // chừa chỗ cho hai góc khung phía dưới
+    final bottom = size.height - 180;
+    final height = bottom - top;
+    if (height < 200) return const [];
+    return [
+      Positioned(
+        left: _band,
+        top: top,
+        width: _coupletW,
+        height: height,
+        child: const _Couplet(asset: ArtAssets.coupletLeft, ruleOnRight: true),
+      ),
+      Positioned(
+        right: _band,
+        top: top,
+        width: _coupletW,
+        height: height,
+        child: const _Couplet(asset: ArtAssets.coupletRight, ruleOnRight: false),
+      ),
     ];
   }
 
@@ -236,14 +266,43 @@ class PhaDoCanvas extends StatelessWidget {
   }
 }
 
+/// Một cột câu đối: chữ thư pháp dọc, kèm đường kẻ cam mảnh ở mép phía trong.
+class _Couplet extends StatelessWidget {
+  const _Couplet({required this.asset, required this.ruleOnRight});
+
+  final String asset;
+  final bool ruleOnRight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Align(
+          alignment: ruleOnRight ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(width: 2, color: const Color(0xCCF07C00)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          child: Image.asset(
+            asset,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+            gaplessPlayback: true,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Kích thước phần đầu phả đồ, tỉ lệ theo chiều rộng canvas.
 class _HeaderGeom {
   _HeaderGeom(double canvasWidth, double sideInset, double band) {
     final inner = canvasWidth - 2 * sideInset;
     final span = math.min(inner, 3600.0);
-    bannerW = span * 0.44;
+    bannerW = span * 0.40;
     bannerH = bannerW / ArtAssets.scrollAspect;
-    dragonW = span * 0.28;
+    dragonW = span * 0.29;
     dragonH = dragonW / ArtAssets.phaDoDragonAspect;
     top = band + math.max(14.0, bannerH * 0.06);
     // chiều cao từ mép trên canvas đến chỗ bắt đầu cây (tính cả hai lề khung `band`)
@@ -253,7 +312,7 @@ class _HeaderGeom {
   late final double bannerW, bannerH, dragonW, dragonH, top, height;
 }
 
-/// Cuốn thư (từ Gia_pha_3.cdr); chữ "PHẢ ĐỒ" + tên dòng họ + địa danh uốn cong theo vòm băng rôn.
+/// Cuốn thư; chữ "PHẢ ĐỒ" + tên dòng họ + địa danh uốn cong theo vòm băng rôn.
 class _ImageBanner extends StatelessWidget {
   const _ImageBanner({required this.title, required this.place});
 
@@ -266,21 +325,21 @@ class _ImageBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Dải đỏ của cuốn thư dày ~0.44 chiều cao. Ba dòng cách nhau đủ rộng
+    // Dải đỏ của cuốn thư dày ~0.38 chiều cao. Ba dòng cách nhau đủ rộng
     // (kể cả dấu mũ/dấu hỏi của chữ hoa tiếng Việt) để dòng trên không đè dòng dưới.
     final lines = <_CurvedLine>[
       const _CurvedLine(
         text: 'PHẢ ĐỒ',
-        size: 0.055,
-        dy: -0.145,
+        size: 0.050,
+        dy: -0.132,
         weight: FontWeight.w700,
         color: AppColors.goldLight,
         spacing: 0.22,
       ),
       _CurvedLine(
         text: title,
-        size: 0.125,
-        dy: 0.006,
+        size: 0.108,
+        dy: 0.004,
         weight: FontWeight.w900,
         color: AppColors.gold,
         spacing: 0.02,
@@ -288,8 +347,8 @@ class _ImageBanner extends StatelessWidget {
       if (place.trim().isNotEmpty)
         _CurvedLine(
           text: place.trim().toUpperCase(),
-          size: 0.043,
-          dy: 0.150,
+          size: 0.040,
+          dy: 0.128,
           weight: FontWeight.w700,
           color: AppColors.goldLight,
           spacing: 0.05,
@@ -336,15 +395,15 @@ class _CurvedLine {
 }
 
 /// Vẽ từng chữ cái dọc theo vòm của dải đỏ trên ảnh băng rôn.
-/// Đường giữa dải đỏ đo trên ảnh cuốn thư: y/H ≈ 0.349 + 1.75·(x/W − 0.5)².
+/// Đường giữa dải đỏ đo trên ảnh cuốn thư: y/H ≈ 0.398 + 1.72·(x/W − 0.5)².
 class _CurvedBannerTextPainter extends CustomPainter {
   _CurvedBannerTextPainter(this.lines, this.shadows);
 
   final List<_CurvedLine> lines;
   final List<Shadow> shadows;
 
-  static const double _top = 0.349;
-  static const double _k = 1.75;
+  static const double _top = 0.398;
+  static const double _k = 1.72;
 
   /// Phần ngang của dải đỏ dùng được (không đè lên hai trục cuộn).
   static const double _x0 = 0.27;
