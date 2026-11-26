@@ -48,9 +48,9 @@ final avatarStoreProvider =
 // --- State ---
 
 final familyProvider =
-    AsyncNotifierProvider<FamilyNotifier, FamilyData>(FamilyNotifier.new);
+    AsyncNotifierProvider<FamilyDataNotifier, FamilyData>(FamilyDataNotifier.new);
 
-class FamilyNotifier extends AsyncNotifier<FamilyData> {
+class FamilyDataNotifier extends AsyncNotifier<FamilyData> {
   @override
   Future<FamilyData> build() => ref.read(loadFamilyProvider)();
 

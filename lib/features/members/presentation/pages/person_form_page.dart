@@ -397,7 +397,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
   }
 
   /// Ghi lại cha/mẹ của các con theo danh sách đang chọn.
-  Future<void> _syncChildren(FamilyNotifier notifier, FamilyData data) async {
+  Future<void> _syncChildren(FamilyDataNotifier notifier, FamilyData data) async {
     final me = widget.personId!;
     final unit = <String>{me, ...data.spousesOf(me).map((e) => e.id)};
     final keep = {for (final r in _children) r.child.id};
