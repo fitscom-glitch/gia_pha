@@ -53,9 +53,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
   Person? _parentA;
   Person? _parentB;
 
-  /// Khi thêm con cho một người đã có vợ/chồng: người còn lại cùng làm cha/mẹ (null = con riêng).
-  String? _coParentId;
-
   /// Các con của người đang sửa, kèm người cha/mẹ còn lại của từng con.
   final List<_ChildRow> _children = [];
 
@@ -82,8 +79,14 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
         _initParents(data, existing);
         _initChildren(data, existing);
       } else if (widget.addAs == AddAs.child && widget.anchorId != null) {
-        final sp = data.spousesOf(widget.anchorId!);
-        if (sp.length == 1) _coParentId = sp.first.id; // chỉ một vợ/chồng: mặc định là con chung
+        // Thêm con từ một người: tự chọn người đó làm cha/mẹ, và người vợ/chồng
+        // (nếu có nhiều vợ/chồng thì mặc định là người thứ nhất); vẫn đổi hoặc bỏ được.
+        final anchor = data.byId(widget.anchorId!);
+        if (anchor != null) {
+          final sp = data.spousesOf(anchor.id);
+          _parentA = anchor;
+          _parentB = sp.isEmpty ? null : sp.first;
+        }
       }
     }
   }
@@ -158,7 +161,7 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
     final sp = data.spousesOf(picked.id);
     setState(() {
       _parentA = picked;
-      _parentB = sp.length == 1 ? sp.first : null; // 2 vợ/chồng trở lên: để người dùng chọn
+      _parentB = sp.isEmpty ? null : sp.first; // 1 vợ/chồng: tự chọn; từ 2 trở lên: mặc định người thứ nhất
     });
   }
 
@@ -249,11 +252,12 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
     if (data == null) return const [];
     final out = <Widget>[];
 
-    // Cha mẹ (khi sửa hoặc thêm thành viên độc lập)
-    if (widget.addAs == null) {
+    // Cha mẹ (khi sửa, thêm thành viên độc lập, hoặc thêm con từ một người)
+    if (widget.addAs == null || widget.addAs == AddAs.child) {
       out.add(_sectionTitle(
         'Cha mẹ',
-        hint: 'Chọn cha/mẹ trong gia phả; nếu người đó có nhiều vợ/chồng thì chọn tiếp người còn lại.',
+        hint: 'Tự chọn theo đời trên (nhiều vợ/chồng thì mặc định người thứ nhất). '
+            'Bấm để chọn người khác, hoặc bấm × để không có cha mẹ.',
       ));
       out.add(InkWell(
         onTap: _pickParent,
@@ -317,24 +321,6 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
         }
       }
       out.add(const SizedBox(height: 16));
-    }
-
-    // Thêm con cho một người đã có vợ/chồng: con chung hay con riêng
-    if (widget.addAs == AddAs.child && widget.anchorId != null) {
-      final anchor = data.byId(widget.anchorId!);
-      if (anchor != null && data.spousesOf(anchor.id).isNotEmpty) {
-        out.add(_sectionTitle(
-          'Con chung / con riêng',
-          hint: 'Chọn người cùng là cha/mẹ của con này, hoặc "Chỉ ${anchor.fullName}" nếu là con riêng.',
-        ));
-        out.add(_coParentDropdown(
-          ownerId: anchor.id,
-          value: _coParentId,
-          noneLabel: 'Chỉ ${anchor.fullName} (con riêng)',
-          onChanged: (v) => setState(() => _coParentId = v),
-        ));
-        out.add(const SizedBox(height: 16));
-      }
     }
 
     // Các con (khi sửa)
@@ -523,21 +509,20 @@ class _PersonFormPageState extends ConsumerState<PersonFormPage> {
       birthOrder: int.tryParse(_order.text.trim()),
     );
     final notifier = ref.read(familyProvider.notifier);
+    final data = _data;
+    // Thêm con: cha/mẹ do mục "Cha mẹ" quyết định (có thể bỏ trống), không tự nối với người gốc.
+    final asChild = widget.addAs == AddAs.child && data != null;
     await notifier.saveMember(
       person,
-      anchorId: widget.anchorId,
-      addAs: widget.addAs,
+      anchorId: asChild ? null : widget.anchorId,
+      addAs: asChild ? null : widget.addAs,
       newPhotoSourcePath: _pickedPhoto,
       removePhoto: _removePhoto && _pickedPhoto == null,
     );
-    final data = _data;
     if (data != null) {
-      if (widget.addAs == AddAs.child && widget.anchorId != null && _coParentId != null) {
-        await notifier.setParents(person.id, [widget.anchorId!, _coParentId!]);
-      }
-      if (widget.addAs == null) {
+      if (widget.addAs == null || asChild) {
         final ids = [if (_parentA != null) _parentA!.id, if (_parentB != null) _parentB!.id];
-        final old = data.parentsOf(person.id).map((e) => e.id);
+        final old = asChild ? const <String>[] : data.parentsOf(person.id).map((e) => e.id);
         if (!_sameIds(ids, old)) await notifier.setParents(person.id, ids);
       }
       if (widget.personId != null) await _syncChildren(notifier, data);
