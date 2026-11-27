@@ -74,6 +74,10 @@ jobs:
 
       - run: flutter pub get
 
+      # Icon ứng dụng: rồng vàng nền đỏ (cấu hình ở mục flutter_launcher_icons trong pubspec.yaml).
+      - name: Tạo icon ứng dụng
+        run: dart run flutter_launcher_icons
+
       # Hai bước dưới chưa chặn build. Khi đã xanh ổn định, bỏ continue-on-error.
       - name: Analyze
         run: flutter analyze --no-fatal-infos
